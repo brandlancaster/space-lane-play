@@ -393,6 +393,12 @@
   @keyframes susp { 50% { box-shadow:0 0 10px #f44; } }
   .sus-note { color:#f99; font-size:11px; text-align:center; padding:4px; } .ms-perks { font-size:11px; color:#789; margin:4px 0 6px; line-height:1.6; } .ms-perks .on { color:#8e9; }
   #marketPanel h2, #dockPanel h2, #myStationPanel h2 { padding:0 70px; overflow-wrap:anywhere; } /* v46: keep titles clear of the ✕ Close button */
+  .missile.enemy-missile { pointer-events:auto; cursor:pointer; z-index:12; }
+  .missile.enemy-missile::after { content:''; position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; border-radius:50%; border:1px dashed rgba(255,210,80,.75); box-shadow:0 0 8px rgba(255,180,60,.4) inset; }
+  .missile.enemy-missile.pd-tried::after { border-color:rgba(160,160,160,.5); box-shadow:none; }
+  .pd-beam { position:absolute; height:2px; background:linear-gradient(90deg,#9ff,#fff); box-shadow:0 0 6px #6ff; transform-origin:0 50%; z-index:11; pointer-events:none; }
+  .icon.evade.on { background:#1d3d5a; border-color:#6cf; color:#fff; box-shadow:0 0 10px #39f; } .icon.evade.dis { opacity:.4; filter:grayscale(1); }
+  .ship.player.evading { animation:evadeJink .5s ease-in-out 4; } @keyframes evadeJink { 25% { translate:6px 0; } 75% { translate:-6px 0; } }
 </style>
 </head>
 <body>
@@ -2171,6 +2177,56 @@ setInterval(()=>{if(hunter)saveHunter();},2000);addEventListener('pagehide',save
 {let d=null;try{d=JSON.parse(localStorage.getItem(HUNTER_KEY)||'null');}catch(e){}
  if(d){hunterNext=Number(d.next)||0;if(isSuspect()&&Number.isFinite(d.x)&&Number.isFinite(d.y)){spawnHunter();hunter.x=Math.max(10,Math.min(364,d.x));hunter.y=Math.max(10,Math.min(818,d.y));hunter.el.setAttribute('transform','translate('+hunter.x.toFixed(1)+','+hunter.y.toFixed(1)+')');
   if(d.dmg&&Array.isArray(d.dmg.bays)&&!d.dmg.destroyed)targetDmg[hunter.name]={bays:d.dmg.bays.map(x=>Math.max(0,Math.min(100,+x||0))),destroyed:false};saveHunter();}}}
+// ===== v47: HOMING MISSILES — re-aim every frame at the target bay's CURRENT position (survives large/small swap) =====
+function missileResolver(el){if(typeof el==='function')return el;if(el&&el.classList&&el.classList.contains('tbay')){const i=el.dataset.i;return()=>document.querySelector('.tbay[data-i="'+i+'"]')||targetEl();}
+ const ps=el&&el.closest&&el.closest('.ship.player');if(ps){const i=[...ps.querySelectorAll('.bay')].indexOf(el);return()=>{const p=document.querySelector('.ship.player');return(p&&p.querySelectorAll('.bay')[i])||p;};}
+ if(el)return()=>el.isConnected?el:targetEl();return()=>targetEl();}
+launchMissile=function(el,onHit,fromEl){const sr0=screenEl.getBoundingClientRect(),a=(fromEl||document.querySelector('.ship.player')).getBoundingClientRect();const tgt=missileResolver(el||targetEl());
+ const m=document.createElement('div');m.className='missile';if(fromEl)m.classList.add('enemy-missile');screenEl.appendChild(m);
+ let x=a.left+a.width/2-sr0.left,y=a.top+a.height/2-sr0.top,p0=0;const t0=performance.now();m.style.left=x+'px';m.style.top=y+'px';
+ const aim=()=>{const t=tgt(),sr=screenEl.getBoundingClientRect();if(!t||!t.isConnected)return null;const b=t.getBoundingClientRect();return{x:b.left+b.width/2-sr.left,y:b.top+b.height/2-sr.top};};
+ const step=now=>{if(!m.isConnected)return;const tt=Math.min(1,(now-t0)/MISSILE_TRAVEL),p=tt*tt,q=aim();
+  if(q&&p>p0){const f=p0>=1?1:(p-p0)/(1-p0);const nx=x+(q.x-x)*f,ny=y+(q.y-y)*f;if(Math.hypot(nx-x,ny-y)>.3)m.style.transform='translate(-50%,-50%) rotate('+Math.atan2(ny-y,nx-x)+'rad)';x=nx;y=ny;m.style.left=x+'px';m.style.top=y+'px';}
+  p0=p;m._pos={x,y};if(tt<1)requestAnimationFrame(step);};
+ m.style.transform='translate(-50%,-50%)';requestAnimationFrame(step);setTimeout(()=>{m.remove();onHit();},MISSILE_TRAVEL);return m;};
+
+// ===== v47: POINT DEFENSE — tap an incoming enemy missile (44 px target) to shoot it with your best working laser =====
+const PD_BASE=.6,PD_TIER=.1,PD_H2=1;
+function pdChance(){if(!reactorOK())return{err:'Point defense needs a working Reactor'};let best=0;
+ fitted('Laser').forEach(l=>{if(modCond(l)<=0||bayDead(l))return;const c=Math.min(.95,(PD_BASE+PD_TIER*(l.tier-1))*(modCond(l)<50?.5:1));best=Math.max(best,c);});
+ return best>0?{c:best}:{err:'Point defense needs a working Laser'};}
+function pdFire(m){if(!m||!m.isConnected||em.el!==m||em.phase!=='flight')return;if(m.dataset.pd){showToast('Point defense already fired at this missile');return;}
+ const r=pdChance();if(r.err){showToast(r.err);return;}if(inventory.hydrogen<PD_H2){flashNoH2('Laser 1');showToast('No H₂ — point defense offline');return;}
+ inventory.hydrogen-=PD_H2;updateH2();saveSoon();m.dataset.pd='1';m.classList.add('pd-tried');
+ const roll=(window.__pdRoll!=null?window.__pdRoll:Math.random());const pos=m._pos;
+ if(pos){const s=document.querySelector('.ship.player').getBoundingClientRect(),sr=screenEl.getBoundingClientRect();const x1=s.left+s.width/2-sr.left,y1=s.top+s.height/2-sr.top;
+  const bm=document.createElement('div');bm.className='pd-beam';const L=Math.hypot(pos.x-x1,pos.y-y1);bm.style.cssText='left:'+x1+'px;top:'+y1+'px;width:'+L+'px;transform:rotate('+Math.atan2(pos.y-y1,pos.x-x1)+'rad)';screenEl.appendChild(bm);setTimeout(()=>bm.remove(),180);}
+ if(roll<r.c){const b=document.createElement('div');b.className='burst';if(pos){b.style.left=pos.x+'px';b.style.top=pos.y+'px';}screenEl.appendChild(b);setTimeout(()=>b.remove(),600);
+  m.remove();em.el=null;em.phase=null;clearLockBanner();window.__pdLast='hit';showToast('💥 Missile intercepted ('+Math.round(r.c*100)+'% PD, −1 H₂)');}
+ else{window.__pdLast='miss';showToast('Point defense missed ('+Math.round(r.c*100)+'%, −1 H₂)');}}
+let pdTapAt=0;screenEl.addEventListener('pointerdown',e=>{const m=e.target.closest('.enemy-missile');if(!m)return;pdTapAt=Date.now();e.stopPropagation();e.preventDefault();pdFire(m);},true);
+['pointerup','click'].forEach(ev=>screenEl.addEventListener(ev,e=>{if(Date.now()-pdTapAt<700)e.stopPropagation();},true)); // a PD tap is not a bay tap / swipe
+
+// ===== v47: EVASIVE BURN — left strip; needs working Warp Drive + 3 H2; 2 s of 50% miss chance on incoming fire; 15 s cooldown =====
+const EVADE_MS=2000,EVADE_CD=15000,EVADE_H2=3;let evadeUntil=0,evadeReady=0;
+const evBtn=document.createElement('div');evBtn.className='icon evade';evBtn.id='evadeBtn';evBtn.innerHTML='EVADE<br><small>3 H₂</small>';document.getElementById('leftStrip').appendChild(evBtn);
+const warpWorks=()=>{const w=fitted('Warp Drive')[0];return !!w&&modCond(w)>0&&!bayDead(w)&&reactorOK();};
+function evadeWhy(){if(!inCombat())return'Evade only in combat';if(!warpWorks())return'Evade needs a working Warp Drive';const now=Date.now();if(now<evadeUntil)return'Evasive burn active';if(now<evadeReady)return'Evade cooling down ('+Math.ceil((evadeReady-now)/1000)+'s)';if(inventory.hydrogen<EVADE_H2)return'Evade needs 3 H₂';return null;}
+function renderEvade(){const now=Date.now(),why=evadeWhy();evBtn.classList.toggle('dis',!!why&&now>=evadeUntil);evBtn.classList.toggle('on',now<evadeUntil);
+ evBtn.querySelector('small').textContent=now<evadeUntil?'ACTIVE':now<evadeReady?Math.ceil((evadeReady-now)/1000)+'s':'3 H₂';}
+evBtn.addEventListener('click',e=>{e.stopPropagation();const why=evadeWhy();if(why){showToast(why);return;}inventory.hydrogen-=EVADE_H2;updateH2();saveSoon();
+ evadeUntil=Date.now()+EVADE_MS;evadeReady=Date.now()+EVADE_CD;const p=document.querySelector('.ship.player');if(p){p.classList.add('evading');setTimeout(()=>p.classList.remove('evading'),EVADE_MS);}showToast('🌀 Evasive burn — 50% miss for 2s');renderEvade();});
+['pointerdown','pointerup'].forEach(ev=>evBtn.addEventListener(ev,e=>e.stopPropagation()));
+setInterval(renderEvade,250);
+const evading=()=>Date.now()<evadeUntil,evadeRoll=()=>(window.__evRoll!=null?window.__evRoll:Math.random())<.5;
+{const _s=incomingShot;incomingShot=function(){if(evading()&&evadeRoll()){const t=targetEl(),p=document.querySelector('.ship.player');if(t&&p){const sr=screenEl.getBoundingClientRect(),a=t.getBoundingClientRect(),b=p.getBoundingClientRect();
+   const d=document.createElement('div');d.className='beam incoming';const x1=a.left+a.width/2-sr.left,y1=a.top+a.height/2-sr.top,x2=b.left+b.width*1.1-sr.left,y2=b.top-sr.top;d.style.cssText='left:'+x1+'px;top:'+y1+'px;width:'+Math.hypot(x2-x1,y2-y1)+'px;transform:rotate('+Math.atan2(y2-y1,x2-x1)+'rad);transform-origin:0 50%;position:absolute;height:3px;opacity:.6';screenEl.appendChild(d);setTimeout(()=>d.remove(),300);}
+  window.__evLast='beam-miss';flashMsg('Laser 1','');showToast('Beam missed — evasive burn');return;}return _s.apply(this,arguments);};}
+{const _i=emImpact;emImpact=function(i){if(evading()&&evadeRoll()){const p=document.querySelector('.ship.player');if(p)burstAt(p);window.__evLast='missile-miss';showToast('Missile missed — evasive burn');return;}return _i.apply(this,arguments);};}
+// ===== DEV CHEATS (REMOVE BEFORE PLAYTEST) =====
+//  - "DEV: Incoming missile" (combat dev bar) -> enemy missile lock starts now (launch after the normal 3 s warning)
+{const b=document.createElement('button');b.id='devMissileBtn';b.textContent='DEV: Incoming missile';document.getElementById('devBar').appendChild(b);
+ ['pointerdown','pointerup'].forEach(ev=>b.addEventListener(ev,e=>e.stopPropagation()));b.onclick=e=>{e.stopPropagation();if(!inCombat()){showToast('Engage a hostile first');return;}if(em.phase){showToast('Missile already incoming');return;}em.next=Date.now();};}
 </script>
 </body>
 </html>
