@@ -1387,7 +1387,8 @@ function tallyStop(){const txt=tallyText();tally={};tallyRender();return txt?'Co
 {const _st=stopCollect;stopCollect=function(msg){const was=!!collecting;_st.call(this);if(was){const sum=tallyStop();showToast((msg?msg+' · ':'')+sum);}else if(msg)showToast(msg);};}
 // ===== STATION TRANSFER =====
 const XFER_KEY='spacegame_transfer_v1';let given=null; // the transferred station POI (owned by someone else)
-const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[c]));
+const ENT_A='&'+'amp;',ENT_L='&'+'lt;',ENT_G='&'+'gt;',ENT_Q='&'+'quot;',ENT_S='&'+'#39;'; // built by concatenation (upload tools decode literal entities)
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':ENT_A,'<':ENT_L,'>':ENT_G,'"':ENT_Q,"'":ENT_S}[c]));
 function xferSave(){try{given?localStorage.setItem(XFER_KEY,JSON.stringify({owner:given.ownerName,x:given.x,y:given.y,level:given.level,kits:given.kits||0})):localStorage.removeItem(XFER_KEY);}catch(e){}}
 function makeGiven(d){const p={id:'given',name:d.owner+"'s Station",ownerName:d.owner,type:'Station',disposition:'passive',friendly:true,owner:'other',x:d.x,y:d.y,level:d.level,kits:d.kits,color:'#59c',r:11};
  POIS.push(p);const nm=p.name;p.name='';makePoiEl(p);p.name=nm;p.el.querySelector('text').textContent=nm;addSdots(p);given=p;return p;}
@@ -1413,7 +1414,7 @@ setInterval(()=>{if(msPanel.classList.contains('show'))setDis(document.getElemen
  const box=document.getElementById('givenLocks');document.getElementById('devReclaim2').style.display=g?'block':'none';
  if(!g){box.innerHTML='';return r;}const why='Owned by '+esc(given.ownerName)+' — not your station';
  box.innerHTML='<div class="lock-hdr">Owner: '+esc(given.ownerName)+' · Lv '+given.level+' · kits '+(given.kits||0)+'</div>'+['🛠 Shipyard','🛡 Defense','📦 Deliver Kits','🧲 Collector fitting','🛰 Switch ships'].map(t=>`<button class="dock-svc dis lockd" data-reason="${why}">${t}</button>`).join('');
- box.querySelectorAll('.lockd').forEach(b=>b.onclick=()=>showToast(b.dataset.reason.replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"').replace(/&#39;/g,"'")));return r;};}
+ box.querySelectorAll('.lockd').forEach(b=>b.onclick=()=>showToast(b.dataset.reason.split(ENT_A).join('&').split(ENT_L).join('<').split(ENT_G).join('>').split(ENT_Q).join('"').split(ENT_S).join("'")));return r;};}
 // ===== DEV CHEATS (REMOVE BEFORE PLAYTEST) =====
 //  - "DEV: Reclaim station" (My Station dock + transferred-station dock) -> undo transfer.
 //    If a new My Station was planted meanwhile it is dismantled: 1 Station Beacon + its delivered kits (as Build Kits) go back to cargo.
