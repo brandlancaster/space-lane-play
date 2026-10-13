@@ -1726,7 +1726,10 @@ const isFrig=s=>s&&s.type==='Light Frigate';
 const slotsOf=(s,type)=>type==='Laser'?2:type==='Cargo'&&isFrig(s)?2:1;
 let M={v:MOD_VER,next:1,ships:{},inv:[]};
 function newMod(type,tier,cond,sub){const m={id:'m'+(M.next++),type,tier:Math.max(1,Math.min(5,tier|0||1)),condition:Math.max(0,Math.min(100,Math.round(cond==null?100:cond)))};if(type==='Collector')m.sub=CSUBS.includes(sub)?sub:'Basic';return m;}
-function defaultFit(s,collSub){const out=[];MTYPES.forEach(t=>{for(let i=0;i<slotsOf(s,t);i++)out.push(newMod(t,1,100,t==='Collector'?collSub:undefined));});return out;}
+// Scout stock (Desi): 8 fitted; Scanner, 2nd Laser and Missile Rack start in inventory. Frigate: every slot filled.
+const SCOUT_SPARE=['Scanner','Laser','Missile Rack'];
+function defaultFit(s,collSub){const out=[],spare=isFrig(s)?[]:SCOUT_SPARE.slice();MTYPES.forEach(t=>{for(let i=0;i<slotsOf(s,t);i++){const m=newMod(t,1,100,t==='Collector'?collSub:undefined);const j=spare.indexOf(t);if(j>=0&&(t!=='Laser'||i===1)){spare.splice(j,1);M.inv.push(m);}else out.push(m);}});return out;}
+function hasMod(type,i){return fitted(type).length>(i||0);}
 function modSave(){try{localStorage.setItem(MOD_KEY,JSON.stringify(M));}catch(e){}}
 function shipMods(s){s=s||activeShip();if(!s)return[];if(!M.ships[s.id]){M.ships[s.id]=defaultFit(s,'Basic');modSave();}return M.ships[s.id];}
 function fitted(type,s){return shipMods(s).filter(m=>m.type===type).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));}
@@ -1772,10 +1775,13 @@ function shMax(){try{return Math.round(100*tierMul(modTier('Shield')));}catch(e)
 function reactorOut(){try{return tierMul(modTier('Reactor'));}catch(e){return 1;}}
 function shRegenMs(){try{return 5000/(tierMul(modTier('Shield'))*reactorOut());}catch(e){return 5000;}}
 function warpMul(){try{return 2*tierMul(modTier('Warp Drive'));}catch(e){return 2;}}
-function scanRange(){return Math.round(60*tierMul(modTier('Scanner')));}
+function scanRange(){return hasMod('Scanner')?Math.round(60*tierMul(modTier('Scanner'))):0;}
 const WBASE={'Laser 1':['Laser',0,10],'Laser 2':['Laser',1,10],'Missile 1':['Missile Rack',0,20],'Railgun 1':['Railgun',0,12]};
 Object.entries(WBASE).forEach(([n,[t,i,d]])=>{if(!WSPEC[n])return;Object.defineProperty(WSPEC[n],'dmg',{get:()=>Math.round(d*tierMul(modTier(t,i))),configurable:true});
  if(n==='Missile 1')Object.defineProperty(WSPEC[n],'splash',{get:()=>Math.round(8*tierMul(modTier(t,i))),configurable:true});});
+// weapons with no fitted module are offline
+{const _tf=toggleFiring;toggleFiring=function(n){const w=WBASE[n];if(w&&!firing[n]&&!hasMod(w[0],w[1])){showToast(n+' — no '+w[0]+' fitted (install at My Station)');return;}return _tf.apply(this,arguments);};}
+{const _ws=wpnStatus;wpnStatus=function(n){const w=WBASE[n];if(w&&!hasMod(w[0],w[1]))return 'Empty slot — no '+w[0];return _ws.apply(this,arguments);};}
 // collector: fittedMod() keeps returning the specialised subtype (or null for Basic) so old code paths work
 fittedMod=function(){const c=fitted('Collector')[0];return c&&c.sub!=='Basic'?c.sub:null;};
 collectorName=function(){const c=fitted('Collector')[0];return c?modName(c):'Basic Collector T1';};
@@ -1785,7 +1791,7 @@ function collectorDesc(){const c=fitted('Collector')[0];if(!c||c.sub==='Basic'){
  return '+'+Math.round(CMOD_BONUS*tierMul(c.tier)*100)+'% '+CMODS[c.sub].res.map(k=>RESN[k][1]).join(', ');}
 // scanner: POI card shows what's there only inside scanner range
 {const _u=updateCard;updateCard=function(){_u.apply(this,arguments);if(!selPoi)return;const h=document.getElementById('poiHint');if(!h)return;const d=Math.hypot(ship.x-selPoi.x,ship.y-selPoi.y),R=scanRange();
- const y=(YIELDS[selPoi.type]||[]).map(r=>RESN[r[0]][1]);h.textContent+=d<=R?' · 📡 '+(y.length?y.join(', '):selPoi.type):' · 📡 beyond scan ('+R+' u)';};}
+ const y=(YIELDS[selPoi.type]||[]).map(r=>RESN[r[0]][1]);h.textContent+=!R?' · 📡 no scanner fitted':d<=R?' · 📡 '+(y.length?y.join(', '):selPoi.type):' · 📡 beyond scan ('+R+' u)';};}
 // ---- install / swap (only docked at My Station) ----
 function installMod(id){if(!atMyStation()){showToast('Install only while docked at My Station');return;}const i=M.inv.findIndex(m=>m.id===id);if(i<0)return;const m=M.inv[i],s=activeShip(),arr=shipMods(s);
  const same=arr.filter(x=>x.type===m.type);let old=null;if(same.length>=slotsOf(s,m.type)){old=same.sort((a,b)=>a.tier-b.tier||modCond(a,s)-modCond(b,s))[0];old.condition=modCond(old,s);arr.splice(arr.indexOf(old),1);M.inv.push(old);}
