@@ -328,7 +328,7 @@
   #gpsBtn { top:56px; left:10px; } #gpsBtn.on { background:#1a3a5a; border-color:#6cf; color:#fff; box-shadow:0 0 8px #4af; }
   #gpsPanel { position:absolute; left:10px; bottom:150px; z-index:31; display:none; flex-direction:column; gap:4px; padding:6px; background:rgba(10,15,25,.92); border:1px dashed #a84; border-radius:8px; width:150px; }
   #gpsRead { font-size:8.5px; color:#cde; line-height:1.3; white-space:pre-wrap; font-family:ui-monospace,monospace; }
-  #gpsPanel.show { display:flex; } #gpsPanel .gp-t { font-size:9px; color:#fc8; text-align:center; }
+  #gpsPanel.show { display:flex; } #gpsPanel .gp-g { display:grid; grid-template-columns:1fr 1fr; gap:4px; } #gpsPanel .gp-g button { font-size:10.5px; padding:0 2px; } #gpsPanel .gp-t { font-size:9px; color:#fc8; text-align:center; }
   #gpsPanel button { min-height:44px; font-size:12px; border-radius:6px; border:1px solid #a84; background:#2a2010; color:#fc8; } #gpsInfo { font-size:9px; color:#9ab; line-height:1.3; }
   .ov-cbay-lbl { position:absolute; font-size:9px; color:#4f8; text-align:center; width:60px; pointer-events:none; }
   /* panels: scroll inside, always-visible close */
@@ -364,7 +364,7 @@
     <button class="cargo-btn" id="warpBtn">🌀 Warp</button>
     <button class="cargo-btn" id="shipBtnMap">🚀 Ship</button>
     <button class="cargo-btn" id="gpsBtn">📡 GPS: OFF</button>
-    <div id="gpsPanel"><div class="gp-t">GPS TEST (DEV)</div><button id="gpsSim10">Sim +10 m</button><button id="gpsSim50">Sim +50 m</button><div id="gpsRead"></div><div id="gpsInfo"></div></div>
+    <div id="gpsPanel"><div class="gp-t">GPS TEST (DEV)</div><div class="gp-g"><button id="gpsSimN">Sim N 10 m</button><button id="gpsSimE">Sim E 10 m</button><button id="gpsSimS">Sim S 10 m</button><button id="gpsSimW">Sim W 10 m</button></div><div id="gpsRead"></div><div id="gpsInfo"></div></div>
     <button class="cargo-btn" id="plantBtn" style="display:none">📍 Plant Beacon</button>
     <svg id="mapSvg" viewBox="0 0 374 828">
       <defs><filter id="glow"><feGaussianBlur stdDeviation="3"/></filter></defs>
@@ -794,7 +794,7 @@ function loadSave(){let d;try{d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null
  if(d.items&&typeof d.items==='object')Object.entries(d.items).forEach(([n,c])=>{c=Number(c);if(typeof n==='string'&&Number.isFinite(c)&&c>0)items[n]=Math.floor(c);});
  if(Array.isArray(d.salvage))salvage=d.salvage.filter(o=>o&&typeof o.id==='string'&&Number.isFinite(o.expiresAt)&&Number.isFinite(o.flagUntil)&&o.expiresAt>Date.now());
  const x=Number(d.x),y=Number(d.y);
- if(Number.isFinite(x)&&Number.isFinite(y)&&x>=0&&x<=374&&y>=0&&y<=828){const n=nearestOnLanes({x,y});ship.x=n.x;ship.y=n.y;}
+ if(Number.isFinite(x)&&Number.isFinite(y)&&x>=0&&x<=374&&y>=0&&y<=828){ship.x=x;ship.y=y;} // free (off-lane) positions are kept since GPS free roam
  return true;}
 window.addEventListener('pagehide',saveNow);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveNow();});
@@ -1559,6 +1559,7 @@ setInterval(()=>{if(shipOv.classList.contains('show')&&bayInfo.style.display!=='
  const l=document.createElement('div');l.className='ov-cbay-lbl';l.textContent='Collector bay';l.style.left=(parseFloat(cb.style.left)-7)+'px';l.style.top=(parseFloat(cb.style.top)+50)+'px';st.appendChild(l);};}
 {const _c=closeShipOv;closeShipOv=function(){document.querySelectorAll('#ovStage .ov-cbay,#ovStage .ov-cbay-lbl').forEach(e=>e.remove());_c();};document.getElementById('ovClose').onclick=closeShipOv;}
 // ===== GPS MODE =====
+const GPS_LANE_SNAP=15,GPS_EASE=0.25,MAP_W=374,MAP_H=828,MAP_PAD=6;let gpsLane='open space',gpsEdgeAt=0;
 const GPS_METERS_TO_UNITS=1,GPS_MIN_M=3,GPS_MAX_M=200,GPS_MAX_ACC=100,GPS_KEY='spacegame_gps_v1';
 let gpsSt={perm:'?',fixes:0,lastFix:0,acc:null,pend:0,skip:'—',moved:0},gpsTarget='';let gpsOn=false,gpsWatch=null,gpsAnchor=null,gpsRoute=[],gpsJumpToasted=false;GAME_KEYS.push(GPS_KEY);
 const gpsBtn=document.getElementById('gpsBtn'),gpsPanel=document.getElementById('gpsPanel');
@@ -1568,41 +1569,46 @@ const gpsLine=document.createElementNS(NS,'polyline');gpsLine.setAttribute('fill
 shipG.parentNode.insertBefore(gpsLine,shipG);
 function drawGpsRoute(){gpsLine.setAttribute('points',gpsOn&&gpsRoute.length?[ship,...gpsRoute].map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' '):'');}
 function gpsUI(msg){gpsBtn.textContent='📡 GPS: '+(gpsOn?'ON':'OFF');gpsBtn.classList.toggle('on',gpsOn);gpsPanel.classList.toggle('show',gpsOn);
- if(msg)gpsSt.msg=msg;document.getElementById('gpsInfo').textContent=gpsOn?(gpsRoute.length?(gpsSt.msg||'Route set — walk to fly'):'Pick a POI to move'):'';gpsReadout();drawGpsRoute();}
+ if(msg)gpsSt.msg=msg;document.getElementById('gpsInfo').textContent=gpsOn?(gpsSt.msg||'Free roam — walk anywhere'):'';gpsReadout();drawGpsRoute();}
 function gpsReadout(){const el=document.getElementById('gpsRead');if(!el)return;if(!gpsOn){el.textContent='';return;}const S=gpsSt;
  el.textContent=['perm: '+S.perm+' · watch: '+(gpsWatch!=null?'yes':'no'),'fixes: '+S.fixes+' · age: '+(S.lastFix?Math.round((Date.now()-S.lastFix)/1000)+'s':'—')+' · ±'+(S.acc==null?'—':Math.round(S.acc))+' m',
- 'pending: '+S.pend.toFixed(1)+' m · skip: '+S.skip,'route: '+(gpsRoute.length?(gpsTarget||'lane')+' ('+gpsRoute.length+' legs)':'none — Pick a POI to move')].join('\n');}
+ 'pending: '+S.pend.toFixed(1)+' m · skip: '+S.skip,'state: '+gpsLane+' · guide: '+(gpsRoute.length?(gpsTarget||'lane'):'none')].join('\n');}
 setInterval(()=>{if(gpsOn)gpsReadout();},1000);
 function gpsPerm(){try{if(navigator.permissions&&navigator.permissions.query)navigator.permissions.query({name:'geolocation'}).then(r=>{gpsSt.perm=r.state;r.onchange=()=>{gpsSt.perm=r.state;gpsReadout();};gpsReadout();}).catch(()=>{gpsSt.perm='n/a';});else gpsSt.perm='n/a';}catch(e){gpsSt.perm='n/a';}}
-// the ONE movement function (real GPS + sim buttons)
-function gpsMoveMeters(m){let move=m*GPS_METERS_TO_UNITS*(warpActive()?2:1);const moved=move;
- if(!gpsRoute.length){const n=nearestOnLanes(ship);if(n.d>0.5){gpsRoute=[{x:n.x,y:n.y}];gpsTarget='nearest lane';}}
- if(!gpsRoute.length){gpsSt.skip='no route — Pick a POI to move';gpsUI();return 0;}
- while(move>0&&gpsRoute.length){const t=gpsRoute[0];const dx=t.x-ship.x,dy=t.y-ship.y,d=Math.hypot(dx,dy);
-  if(d>0.01)ship.angle=Math.atan2(dy,dx)*180/Math.PI+90;
-  if(d<=move){ship.x=t.x;ship.y=t.y;gpsRoute.shift();move-=d;}else{ship.x+=dx/d*move;ship.y+=dy/d*move;move=0;}}
- drawShip();updateCard();if(typeof setCollectUI==='function')setCollectUI();saveSoon();gpsSt.moved+=moved-move;gpsSt.skip='—';if(!gpsRoute.length){gpsTarget='';showToast('GPS: arrived — pick a POI to keep moving');}gpsUI('Moved '+(moved-move).toFixed(1)+' u');return moved-move;}
+// the ONE movement function (real GPS + sim buttons): north/east metres -> free movement, north = up
+function gpsMoveNE(n,e){const k=GPS_METERS_TO_UNITS*(warpActive()?2:1);let dx=e*k,dy=-n*k;
+ if(Math.hypot(dx,dy)>0.01)ship.angle=Math.atan2(dy,dx)*180/Math.PI+90;
+ let nx=ship.x+dx,ny=ship.y+dy;const cx=Math.min(MAP_W-MAP_PAD,Math.max(MAP_PAD,nx)),cy=Math.min(MAP_H-MAP_PAD,Math.max(MAP_PAD,ny));
+ if(cx!==nx||cy!==ny){if(Date.now()-gpsEdgeAt>5000){gpsEdgeAt=Date.now();showToast('Edge of charted space');}}
+ const moved=Math.hypot(cx-ship.x,cy-ship.y);ship.x=cx;ship.y=cy;gpsSt.moved+=moved;gpsSt.skip='—';gpsLaneCheck();
+ drawShip();updateCard();if(typeof setCollectUI==='function')setCollectUI();saveSoon();gpsUI('Moved '+moved.toFixed(1)+' u ('+gpsLane+')');return moved;}
+function gpsLaneCheck(){const q=nearestOnLanes(ship);gpsLane=q&&q.d<=GPS_LANE_SNAP?'on lane':'open space';return q;}
+// smooth pull onto a nearby lane (eases ~25% of the gap every 60 ms; never a teleport)
+setInterval(()=>{if(!gpsOn)return;const q=gpsLaneCheck();if(q&&gpsLane==='on lane'&&q.d>0.2){ship.x+=(q.x-ship.x)*GPS_EASE;ship.y+=(q.y-ship.y)*GPS_EASE;drawShip();updateCard();saveSoon();}},60);
+// small tag by the arrow
+const gpsTag=document.createElementNS(NS,'text');gpsTag.setAttribute('font-size','8');gpsTag.setAttribute('fill','#9cf');gpsTag.setAttribute('text-anchor','middle');gpsTag.setAttribute('pointer-events','none');shipG.parentNode.appendChild(gpsTag);
+{const _d=drawShip;drawShip=function(){_d.apply(this,arguments);gpsTag.textContent=gpsOn?gpsLane:'';gpsTag.setAttribute('x',ship.x.toFixed(1));gpsTag.setAttribute('y',(ship.y+20).toFixed(1));drawGpsRoute();};}
 // shared delta filter: returns 'move'|'small'|'jump'
-function gpsDelta(m){gpsSt.pend=m;if(m<GPS_MIN_M){gpsSt.skip='<3 m (accumulating)';gpsReadout();return 'small';}gpsSt.pend=0;if(m>GPS_MAX_M){gpsSt.skip='jump >200 m';gpsReadout();}if(m>GPS_MAX_M){if(!gpsJumpToasted){gpsJumpToasted=true;showToast('GPS jump ignored (>200 m) — re-anchored');}return 'jump';}gpsMoveMeters(m);return 'move';}
+function gpsDelta(n,e){const m=Math.hypot(n,e);gpsSt.pend=m;if(m<GPS_MIN_M){gpsSt.skip='<3 m (accumulating)';gpsReadout();return 'small';}gpsSt.pend=0;if(m>GPS_MAX_M){gpsSt.skip='jump >200 m';gpsReadout();}if(m>GPS_MAX_M){if(!gpsJumpToasted){gpsJumpToasted=true;showToast('GPS jump ignored (>200 m) — re-anchored');}return 'jump';}gpsMoveNE(n,e);return 'move';}
 function gpsOnPos(pos){if(!gpsOn)return;const c=pos.coords;gpsSt.fixes++;gpsSt.lastFix=Date.now();gpsSt.acc=c.accuracy;if(Number.isFinite(c.accuracy)&&c.accuracy>GPS_MAX_ACC){gpsSt.skip='weak fix ±'+Math.round(c.accuracy)+' m';gpsReadout();return;}
  const p={lat:c.latitude,lon:c.longitude};if(!gpsAnchor){gpsAnchor=p;gpsSt.skip='first fix = anchor';gpsReadout();return;}
- const r=gpsDelta(haversine(gpsAnchor,p));if(r!=='small')gpsAnchor=p;} // small: keep anchor so moves accumulate
+ const t=Math.PI/180,Rm=6371000,dn=(p.lat-gpsAnchor.lat)*t*Rm,de=(p.lon-gpsAnchor.lon)*t*Rm*Math.cos((p.lat+gpsAnchor.lat)/2*t);const r=gpsDelta(dn,de);if(r!=='small')gpsAnchor=p;} // small: keep anchor so moves accumulate
 function gpsFail(msg){gpsStop();showToast(msg);}
 function gpsStart(){if(!window.isSecureContext){gpsFail('GPS needs a secure page (https or localhost)');return false;}
  if(!navigator.geolocation||!navigator.geolocation.watchPosition){gpsFail('GPS not available on this device');return false;}
  if(gpsWatch!=null)try{navigator.geolocation.clearWatch(gpsWatch);}catch(e){}gpsWatch=null;
- gpsOn=true;gpsAnchor=null;gpsJumpToasted=false;gpsSt.fixes=0;gpsSt.lastFix=0;gpsSt.acc=null;gpsSt.pend=0;gpsSt.skip='waiting for fix';gpsSt.msg='';gpsPerm();if(ship.path.length){gpsRoute=ship.path.slice();ship.path=[];}
+ gpsOn=true;gpsAnchor=null;gpsJumpToasted=false;gpsSt.fixes=0;gpsSt.lastFix=0;gpsSt.acc=null;gpsSt.pend=0;gpsSt.skip='waiting for fix';gpsSt.msg='';gpsPerm();gpsLaneCheck();if(ship.path.length){gpsRoute=ship.path.slice();ship.path=[];}
  try{gpsWatch=navigator.geolocation.watchPosition(gpsOnPos,err=>{if(err&&err.code===1){gpsSt.perm='denied';gpsFail('GPS permission denied — GPS off');return;}
   gpsSt.skip=(err&&err.code===3?'timeout':'position unavailable')+' — still watching';gpsReadout();},{enableHighAccuracy:true,maximumAge:5000,timeout:60000});}catch(e){gpsFail('GPS error — GPS off');return false;}
  try{localStorage.setItem(GPS_KEY,'1');}catch(e){}gpsUI('Waiting for GPS fix…');return true;}
 function gpsStop(){if(gpsWatch!=null&&navigator.geolocation)try{navigator.geolocation.clearWatch(gpsWatch);}catch(e){}gpsWatch=null;gpsOn=false;gpsAnchor=null;gpsRoute=[];
- try{localStorage.setItem(GPS_KEY,'0');}catch(e){}gpsUI();}
-gpsBtn.onclick=e=>{e.stopPropagation();if(gpsOn){gpsStop();showToast('GPS off');}else if(gpsStart())showToast('GPS on — walk to fly');};
-// while GPS is on, taps set the route but never auto-fly
-{const _f=flyTo;flyTo=function(p){if(!gpsOn)return _f.apply(this,arguments);gpsRoute=route(ship,p);ship.path=[];gpsTarget=(p&&p.name)||'lane point';gpsSt.msg='';gpsUI();};}
+ try{localStorage.setItem(GPS_KEY,'0');}catch(e){}gpsUI();drawShip();}
+gpsBtn.onclick=e=>{e.stopPropagation();if(gpsOn){gpsStop();showToast('GPS off');}else if(gpsStart())showToast('GPS on — walk anywhere');};
+// while GPS is on, a tapped route is only a dashed guide line; nothing auto-flies
+{const _f=flyTo;flyTo=function(p){if(!gpsOn)return _f.apply(this,arguments);gpsRoute=route(ship,p);ship.path=[];gpsTarget=(p&&p.name)||'lane point';gpsSt.msg='Guide to '+gpsTarget+' — walk there';gpsUI();};}
 // ===== DEV CHEATS (REMOVE BEFORE PLAYTEST) =====
-//  - GPS test panel (visible only while GPS is on): "Sim +10 m" / "Sim +50 m" feed gpsDelta() -> gpsMoveMeters(), same path as real fixes
-document.getElementById('gpsSim10').onclick=()=>{gpsDelta(10);};document.getElementById('gpsSim50').onclick=()=>{gpsDelta(50);};
+//  - GPS test panel (visible only while GPS is on): "Sim N/E/S/W 10 m" feed gpsDelta(north,east) -> gpsMoveNE(), same path as real fixes
+[['N',10,0],['E',0,10],['S',-10,0],['W',0,-10]].forEach(([d,n,e])=>{document.getElementById('gpsSim'+d).onclick=()=>{gpsDelta(n,e);};});
 function gpsLoad(){let v=null;try{v=localStorage.getItem(GPS_KEY);}catch(e){}if(v==='1')gpsStart();else gpsUI();} // fresh permission request; positions never cached
 
 // ===== PANEL TOGGLE / CLOSE CONSISTENCY =====
