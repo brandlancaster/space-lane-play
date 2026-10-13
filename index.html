@@ -399,6 +399,10 @@
   .pd-beam { position:absolute; height:2px; background:linear-gradient(90deg,#9ff,#fff); box-shadow:0 0 6px #6ff; transform-origin:0 50%; z-index:11; pointer-events:none; }
   .icon.evade.on { background:#1d3d5a; border-color:#6cf; color:#fff; box-shadow:0 0 10px #39f; } .icon.evade.dis { opacity:.4; filter:grayscale(1); }
   .ship.player.evading { animation:evadeJink .5s ease-in-out 4; } @keyframes evadeJink { 25% { translate:6px 0; } 75% { translate:-6px 0; } }
+  .e-evading { position:absolute; transform:translate(-50%,-100%); z-index:13; pointer-events:none; font-size:10px; font-weight:800; letter-spacing:1px; color:#fff; background:#a05a00; border:1px solid #fc6; border-radius:8px; padding:2px 8px; white-space:nowrap; }
+  .e-miss { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%); z-index:13; pointer-events:none; color:#fd8; font-weight:800; font-size:13px; text-shadow:0 0 6px #000; }
+  .burst.e-int { background:radial-gradient(circle,#fff,#8cf 45%,transparent 70%); }
+  .e-jink { animation:evadeJink .5s ease-in-out 4; }
 </style>
 </head>
 <body>
@@ -1152,8 +1156,8 @@ function emImpact(i){const pship=document.querySelector('.ship.player');let anyS
  if(cargoPanel.style.display==='block')renderCargo();saveSoon();if(shipDisabled())disableShip();}
 setInterval(()=>{const st=inCombat()?tgtState():null;
  if(!st||st.destroyed||disabledOverlay.classList.contains('show')||shipDisabled()){if(em.phase||em.next!=null)emCancel();return;}
- const now=Date.now();if(em.next==null){em.next=now+EM_EVERY;return;}
- if(!em.phase&&now>=em.next){em.phase='lock';em.lockAt=now;em.launchAt=now+EM_WARN;em.next=now+EM_EVERY;showLockBanner();
+ const now=Date.now();if(em.next==null){em.next=now+emGap();return;}
+ if(!em.phase&&now>=em.next){em.phase='lock';em.lockAt=now;em.launchAt=now+EM_WARN;em.next=now+emGap();showLockBanner();
   const ep=document.createElement('div');ep.className='edge-pulse';screenEl.appendChild(ep);setTimeout(()=>ep.remove(),950);showToast('⚠ Incoming missile lock!');}
  else if(em.phase==='lock'&&now>=em.launchAt){const open=playerBays.map((b,i)=>b.damage<100?i:-1).filter(i=>i>=0);em.bay=open[Math.floor(Math.random()*open.length)];
   em.phase='flight';em.impactAt=now+MISSILE_TRAVEL;const bayEl=document.querySelector('.ship.player').querySelectorAll('.bay')[em.bay];
@@ -2227,6 +2231,27 @@ const evading=()=>Date.now()<evadeUntil,evadeRoll=()=>(window.__evRoll!=null?win
 //  - "DEV: Incoming missile" (combat dev bar) -> enemy missile lock starts now (launch after the normal 3 s warning)
 {const b=document.createElement('button');b.id='devMissileBtn';b.textContent='DEV: Incoming missile';document.getElementById('devBar').appendChild(b);
  ['pointerdown','pointerup'].forEach(ev=>b.addEventListener(ev,e=>e.stopPropagation()));b.onclick=e=>{e.stopPropagation();if(!inCombat()){showToast('Engage a hostile first');return;}if(em.phase){showToast('Missile already incoming');return;}em.next=Date.now();};}
+// ===== v48: ENEMY AI — Raider Vex missile cadence, enemy point defense, Vex low-hull evade (Siege Raider unchanged) =====
+const isVex=p=>!!p&&(p.id==='raider'||/^Raider Vex · /.test(p.name||''));
+function emGap(){return isVex(combatPoi)?17000+Math.random()*6000:EM_EVERY;} // Vex: ~20 s ± 3 s, normal 3 s lock warning
+const ePD=()=>isVex(combatPoi)?.3:(typeof hunter!=='undefined'&&hunter&&combatPoi===hunter)?.4:0;
+const eRoll=()=>window.__eRoll!=null?window.__eRoll:Math.random();
+let vexEvUntil=0,vexEvReady=0;const vexEvading=()=>isVex(combatPoi)&&Date.now()<vexEvUntil;
+function enemyBurst(pos){const b=document.createElement('div');b.className='burst e-int';b.style.left=pos.x+'px';b.style.top=pos.y+'px';screenEl.appendChild(b);setTimeout(()=>b.remove(),600);}
+{const _l=launchMissile;launchMissile=function(el,onHit,fromEl){if(fromEl||!inCombat())return _l.apply(this,arguments);
+ const tgt=combatPoi,pd=ePD(),shot=pd>0&&eRoll()<pd;let lost=false;
+ const m=_l.call(this,el,()=>{if(lost)return;if(vexEvading()&&eRoll()<.5){if(m._pos)enemyBurst(m._pos);showToast('Missile missed — '+combatPoi.name+' evading');window.__eLast='evade-miss';return;}onHit();},fromEl);
+ if(shot)setTimeout(()=>{if(!m.isConnected||combatPoi!==tgt)return;lost=true;const pos=m._pos;m.remove();if(pos)enemyBurst(pos);window.__eLast='intercepted';showToast('✖ '+tgt.name+' intercepted your missile');},MISSILE_TRAVEL*(.45+Math.random()*.3));
+ return m;};}
+{const _f=fireShot;fireShot=function(n){const W=WSPEC[n];if(W&&W.kind!=='missile'&&vexEvading()&&eRoll()<.5){const st=tgtState(),real=st&&st.bays;if(st)st.bays=real.map(()=>0);try{_f.apply(this,arguments);}finally{if(st)st.bays=real;renderTargetBays();} /* shot (and its H2/ammo) spent, damage discarded */
+  const t=targetEl();if(t){const f=document.createElement('div');f.className='e-miss';f.textContent='MISS';t.parentElement.appendChild(f);setTimeout(()=>f.remove(),700);}window.__eLast='beam-miss';return;}return _f.apply(this,arguments);};}
+setInterval(()=>{const st=inCombat()?tgtState():null,now=Date.now();let lab=document.querySelector('.e-evading');
+ if(st&&!st.destroyed&&isVex(combatPoi)){const hull=100-st.bays.reduce((a,b)=>a+b,0)/st.bays.length;
+  if(hull<25&&now>=vexEvReady){vexEvUntil=now+2000;vexEvReady=now+15000;showToast('⚠ '+combatPoi.name+' is evading!');}}
+ const on=!!st&&vexEvading();const t=targetEl();
+ if(on&&t){if(!lab||lab.parentElement!==t.parentElement){if(lab)lab.remove();lab=document.createElement('div');lab.className='e-evading';lab.textContent='EVADING';t.parentElement.appendChild(lab);}
+  const r=t.getBoundingClientRect(),pr=t.parentElement.getBoundingClientRect();lab.style.left=(r.left+r.width/2-pr.left)+'px';lab.style.top=Math.max(0,r.top-pr.top-4)+'px';t.classList.add('e-jink');}
+ else{if(lab)lab.remove();document.querySelectorAll('.e-jink').forEach(e=>e.classList.remove('e-jink'));}},150);
 </script>
 </body>
 </html>
