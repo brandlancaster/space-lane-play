@@ -323,6 +323,15 @@
   #gpsPanel.show { display:flex; } #gpsPanel .gp-t { font-size:9px; color:#fc8; text-align:center; }
   #gpsPanel button { min-height:44px; font-size:12px; border-radius:6px; border:1px solid #a84; background:#2a2010; color:#fc8; } #gpsInfo { font-size:9px; color:#9ab; line-height:1.3; }
   .ov-cbay-lbl { position:absolute; font-size:9px; color:#4f8; text-align:center; width:60px; pointer-events:none; }
+  /* panels: scroll inside, always-visible close */
+  #cargoPanel { top:90px; bottom:auto; max-height:calc(100% - 110px); max-height:min(calc(100% - 110px), calc(100dvh - 110px)); overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior:contain; padding-top:0; }
+  .pnl-bar { position:sticky; top:0; z-index:2; display:flex; justify-content:flex-end; margin:0 -14px 6px; padding:6px 8px; background:rgba(15,20,30,.98); border-bottom:1px solid #234; }
+  .pnl-x { min-width:44px; min-height:44px; padding:0 14px; border-radius:8px; border:1px solid #4a6a8a; background:#1e2a3a; color:#cde; font-size:13px; }
+  #dockPanel, #marketPanel, #myStationPanel, #shipOv { overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior:contain; }
+  #dockPanel > *, #marketPanel > *, #myStationPanel > *, #shipOv > * { flex-shrink:0; }
+  .dock-x { position:sticky; top:0; align-self:flex-end; z-index:3; margin:-60px -24px 6px 0; }
+  #mktList { flex-shrink:0; }
+  .bay-info { touch-action:pan-y; max-height:60%; overflow-y:auto; }
   .dock-svc.dev { padding:8px; font-size:12px; border-style:dashed; border-color:#a84; color:#fc8; background:#2a2010; }
   .scav { position:absolute; z-index:5; transform:translate(-50%,-50%); pointer-events:none; text-align:center; }
   .scav .body { width:22px; height:22px; margin:0 auto; border-radius:50%; background:radial-gradient(circle,#ccc 0,#777 45%,#333 70%); border:2px solid #9cf; box-shadow:0 0 8px #6af; animation:hover 1.6s ease-in-out infinite; }
@@ -439,7 +448,7 @@
     <button class="dock-svc dev" id="devSiegeBtn">DEV: Simulate siege declared</button><button class="dock-svc dev" id="devSiegeSkip">DEV: ⏩ +6h (siege)</button><button class="dock-svc dev" id="devSiegeSkip5">DEV: ⏩ +5m (siege)</button>
     <button class="dock-svc" id="msXfer">🤝 Transfer Station <small>(free)</small></button><button class="dock-svc dev" id="devReclaim">DEV: Reclaim station</button>
     <button class="dock-svc undock" id="msUndock">⇠ Undock</button></div>
-  <div id="cargoPanel"><button class="close-x" id="cargoClose">×</button><h3>Cargo Hold <span style="float:right;margin-right:18px;color:#fd6;font-size:12px">💰 <span id="cargoCredits">0</span> cr</span></h3><div id="cargoList"></div><button id="resetBtn">⟲ Reset</button></div>
+  <div id="cargoPanel"><div class="pnl-bar"><button class="pnl-x" id="cargoClose">✕ Close</button></div><h3>Cargo Hold <span style="float:right;margin-right:18px;color:#fd6;font-size:12px">💰 <span id="cargoCredits">0</span> cr</span></h3><div id="cargoList"></div><button id="resetBtn">⟲ Reset</button></div>
 </div>
 <div id="resetDlg"><div class="cd-box"><h3>⟲ Reset</h3><p>Erase all progress and start fresh?</p><div class="cd-row"><button id="rsCancel">Cancel</button><button id="rsOk" style="border-color:#f66;background:#3a1414;color:#fcc">Erase</button></div></div></div>
 <div id="shipOv"><div class="ov-hd"><div><span id="ovName">Ship</span><small id="ovType"></small></div><button id="ovClose">Close</button></div>
@@ -1578,6 +1587,32 @@ gpsBtn.onclick=e=>{e.stopPropagation();if(gpsOn){gpsStop();showToast('GPS off');
 //  - GPS test panel (visible only while GPS is on): "Sim +10 m" / "Sim +50 m" feed gpsDelta() -> gpsMoveMeters(), same path as real fixes
 document.getElementById('gpsSim10').onclick=()=>{gpsDelta(10);};document.getElementById('gpsSim50').onclick=()=>{gpsDelta(50);};
 function gpsLoad(){let v=null;try{v=localStorage.getItem(GPS_KEY);}catch(e){}if(v==='1')gpsStart();else gpsUI();} // fresh permission request; positions never cached
+
+// ===== PANEL TOGGLE / CLOSE CONSISTENCY =====
+function toggleCargo(e){e&&e.stopPropagation();if(cargoPanel.style.display==='block'){cargoPanel.style.display='none';}else{renderCargo();cargoPanel.style.display='block';cargoPanel.scrollTop=0;}}
+['cargoBtnMap','cargoBtnShip'].forEach(id=>{document.getElementById(id).onclick=toggleCargo;});
+document.getElementById('cargoClose').onclick=e=>{e.stopPropagation();cargoPanel.style.display='none';};
+// sticky ✕ Close on full-screen dock panels (same action as their Undock / Back buttons)
+[['dockPanel','undockBtn'],['marketPanel','mktBack'],['myStationPanel','msUndock']].forEach(([pid,bid])=>{const P=document.getElementById(pid);const x=document.createElement('button');x.className='pnl-x dock-x';x.id=pid+'X';x.textContent='✕ Close';
+ x.onclick=e=>{e.stopPropagation();document.getElementById(bid).click();};P.insertBefore(x,P.firstChild);});
+// inspect: tapping the same bay again closes it
+let lastInspect=null;
+{const _sb=showBayInfo;showBayInfo=function(bay,el){const key=(el&&el.closest('#shipOv')?'ov:':'sc:')+bay.name;
+ if(bayInfo.style.display==='block'&&lastInspect===key){closeMenus();lastInspect=null;inspShut=null;return;}
+ if(inspShut&&inspShut.k===key&&Date.now()-inspShut.t<500){inspShut=null;return;} // same tap already closed it
+ _sb(bay,el);lastInspect=key;keepInspectOffBay(el);};}
+{const _scb=showCollectorBay;showCollectorBay=function(el){const key='sc:cbay';if(bayInfo.style.display==='block'&&lastInspect===key){closeMenus();inspShut=null;return;}
+ if(inspShut&&inspShut.k===key&&Date.now()-inspShut.t<500){inspShut=null;return;}_scb(el);lastInspect=key;keepInspectOffBay(el);};}
+// keep the inspect popup from covering the bay it describes (so tapping the bay again closes it)
+function keepInspectOffBay(el){if(!el||bayInfo.style.display!=='block')return;const host=bayInfo.offsetParent;if(!host)return;const H=host.getBoundingClientRect(),b=el.getBoundingClientRect();let r=bayInfo.getBoundingClientRect();
+ const hit=q=>q.left<b.right&&q.right>b.left&&q.top<b.bottom&&q.bottom>b.top;if(!hit(r))return;const w=r.width,h=r.height,st=host.scrollTop||0;
+ const cand=[[b.right+6,b.top],[b.left-w-6,b.top],[b.left,b.top-h-6],[b.left,b.bottom+6]];
+ for(const [x,y] of cand){const L=Math.max(H.left+4,Math.min(H.right-w-4,x)),T=Math.max(H.top+4,Math.min(H.bottom-h-4,y));const q={left:L,top:T,right:L+w,bottom:T+h};
+  if(!hit(q)){bayInfo.style.left=(L-H.left)+'px';bayInfo.style.top=(T-H.top+st)+'px';return;}}}
+let inspShut=null;{const _cm=closeMenus;closeMenus=function(){if(bayInfo.style.display==='block'&&lastInspect)inspShut={k:lastInspect,t:Date.now()};_cm.apply(this,arguments);lastInspect=null;};}
+// chooser: a tap that just dismissed it must not reopen it (tap again = close)
+let chooserShutAt=0;window.addEventListener('pointerdown',e=>{if(chooser&&!chooser.contains(e.target))chooserShutAt=Date.now();},true);
+{const _oc=openChooser;openChooser=function(){if(Date.now()-chooserShutAt<500){chooserShutAt=0;return;}return _oc.apply(this,arguments);};}
 // ===== HYDROGEN DRAIN =====
 function syncWarpIcon(){const sm=document.querySelector('#leftStrip [data-mod="warp"] small');if(sm)sm.textContent=moduleConfigs.warp.value?'ON':'OFF';}
 function drainH2(amt){if(amt<=0)return;inventory.hydrogen=Math.max(0,inventory.hydrogen-amt);
