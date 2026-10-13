@@ -359,6 +359,10 @@
   html.art .ship .bay.dmg-yellow { background:rgba(255,200,0,.38); } html.art .ship .bay.dmg-orange { background:rgba(255,120,0,.42); } html.art .ship .bay.dmg-red { background:rgba(220,40,40,.46); }
   html.art .ship .tbay { border-color:rgba(255,170,170,.8); }
   .hthumb { width:44px; height:24px; object-fit:contain; flex:none; }
+  .mfit { display:flex; flex-wrap:wrap; gap:4px; } .mtag { font-size:10.5px; padding:3px 6px; border:1px solid #2a4a6a; border-radius:5px; background:#0f1c2a; color:#cde; } .mtag i, .mrow i { color:#89a; font-style:normal; font-size:10px; }
+  .mrow { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:12px; color:#cde; padding:2px 0; } .mrow button.minst, .cb-row button.minst { min-height:44px; padding:0 12px; border-radius:6px; border:1px solid #6c9; background:#1e3a2a; color:#dfe; font-size:12px; }
+  button.minst.dis { opacity:.45; filter:grayscale(1); } .mtypes { display:flex; flex-wrap:wrap; gap:4px; } .msel { min-height:44px; padding:0 8px; font-size:11px; border-radius:6px; border:1px solid #456; background:#132030; color:#cde; } .msel.on { border-color:#fc8; color:#fc8; }
+  .cap-row { color:#fd6; } b.tier { color:#fc8; font-size:11px; margin-left:3px; }
 </style>
 </head>
 <body>
@@ -707,7 +711,7 @@ svg.addEventListener('pointerdown',e=>{const p=svgPt(e);const n=nearestOnLanes(p
  if(n.d<25){flyTo(p);} else if(card.style.display==='block'){closeCard();} else showToast('Tap on a spacelane');});
 function drawShip(){shipG.setAttribute('transform',`translate(${ship.x},${ship.y}) rotate(${ship.angle})`);}
 let last=performance.now();
-function tick(now){const dt=Math.min(.05,(now-last)/1000);last=now;let move=120*dt*(typeof warpActive==='function'&&warpActive()?2:1);
+function tick(now){const dt=Math.min(.05,(now-last)/1000);last=now;let move=120*dt*(typeof warpActive==='function'&&warpActive()?warpMul():1);
  while(move>0&&ship.path.length){const t=ship.path[0];const dx=t.x-ship.x,dy=t.y-ship.y,d=Math.hypot(dx,dy);
   if(d<=move){ship.x=t.x;ship.y=t.y;ship.path.shift();move-=d;}else{ship.x+=dx/d*move;ship.y+=dy/d*move;move=0;}
   if(d>0.01)ship.angle=Math.atan2(dy,dx)*180/Math.PI+90;}
@@ -1382,7 +1386,7 @@ function cbayControls(){const why=atMyStation()?null:'Fit/swap only while docked
  return '<div class="cb-row">'+owned.map(n=>`<button class="cbfit${why?' dis':''}" data-mod="${n}" data-reason="${why||''}">Fit ${n}</button>`).join('')+(f?`<button class="cbfit${why?' dis':''}" data-mod="" data-reason="${why||''}">Unfit</button>`:'')+'</div>'+
   (owned.length||f?'':'<div class="cb-why" style="color:#89a">No modules in inventory — build at Shipyard (Lv 2)</div>')+(why?`<div class="cb-why">${why}</div>`:'');}
 function showCollectorBay(el){closeMenus();const f=fittedMod();bayTitle.textContent='Collector bay';
- bayBody.innerHTML=`<div>Fitted: <b>${f||'Basic Collector'}</b></div><div style="font-size:10px;color:#89a;margin-top:2px">${f?'+50% '+CMODS[f].res.map(k=>RESN[k][1]).join(', '):'Standard yields'}</div>`+cbayControls();
+ bayBody.innerHTML=`<div>Fitted: <b>${collectorName()}</b></div><div style="font-size:10px;color:#89a;margin-top:2px">${collectorDesc()}</div>`+cbayControls();
  const rect=el.getBoundingClientRect(),sr=document.getElementById('screen').getBoundingClientRect();
  bayInfo.style.left=Math.min(rect.right-sr.left+6,200)+'px';bayInfo.style.top=(rect.top-sr.top)+'px';bayInfo.style.display='block';showToast('Collector bay: '+(f||'Basic Collector'));}
 function fitModule(n){if(!atMyStation()){showToast('Fit/swap only while docked at My Station');return;}const a=activeShip();const old=fittedMod();
@@ -1396,7 +1400,7 @@ function modCostTxt(c){return Object.entries(c).map(([k,v])=>v+' '+RESN[k][1]).j
 function modReason(n){const miss=Object.entries(CMODS[n].cost).filter(([k,v])=>inventory[k]<v).map(([k,v])=>`${v} ${RESN[k][1]} (have ${Math.floor(inventory[k])})`);return miss.length?'Need '+miss.join(', '):null;}
 function renderModules(){const box=document.getElementById('msModules');if(!myStation||myStation.level<2){box.innerHTML='';return;}const a=activeShip();
  box.innerHTML=Object.keys(CMODS).map(n=>`<button class="dock-svc mbuild" data-mod="${n}">🔧 Build ${n} <small>(${modCostTxt(CMODS[n].cost)}) · owned ${cnt(n)}</small></button>`).join('')+
-  `<div class="cargo-sec">🧲 Collector bay — ${a.name}</div><div class="l" style="font-size:12px;color:#cde">Fitted: <b>${fittedMod()||'Basic Collector'}</b></div>`+cbayControls();
+  `<div class="cargo-sec">🧲 Collector bay — ${a.name}</div><div class="l" style="font-size:12px;color:#cde">Fitted: <b>${collectorName()}</b></div>`+cbayControls();
  box.querySelectorAll('.mbuild').forEach(b=>{setDis(b,modReason(b.dataset.mod));b.onclick=()=>{const n=b.dataset.mod,r=modReason(n);if(r){showToast(r);return;}
   Object.entries(CMODS[n].cost).forEach(([k,v])=>inventory[k]-=v);items[n]=cnt(n)+1;saveNow();renderMS();showToast('Built '+n+' — in cargo');};});}
 {const _r=renderMS;renderMS=function(){_r.apply(this,arguments);renderModules();};}
@@ -1492,15 +1496,15 @@ setInterval(()=>{const dis=shipDisabled();warpBtn.classList.toggle('dis',dis);wa
 
 // ===== SHIELD POOL (per ship, 0-100) =====
 const SH_KEY='spacegame_shields_v1',SH_MAX=100,SH_LASER=1,SH_MISSILE=6,SH_REGEN_MS=5000,SH_REGEN_H2=0.1;
-let shPools={};try{const d=JSON.parse(localStorage.getItem(SH_KEY)||'null');if(d&&typeof d==='object')Object.entries(d).forEach(([k,v])=>{if(v&&Number.isFinite(+v.pool))shPools[k]={pool:Math.max(0,Math.min(SH_MAX,+v.pool)),regenAt:Number.isFinite(+v.regenAt)?+v.regenAt:Date.now()};});}catch(e){}
-function shState(){const a=activeShip();const id=a?a.id:'starter';return shPools[id]||(shPools[id]={pool:SH_MAX,regenAt:Date.now()});} // missing (old saves / new ships) = full
+let shPools={};try{const d=JSON.parse(localStorage.getItem(SH_KEY)||'null');if(d&&typeof d==='object')Object.entries(d).forEach(([k,v])=>{if(v&&Number.isFinite(+v.pool))shPools[k]={pool:Math.max(0,Math.min(shMax(),+v.pool)),regenAt:Number.isFinite(+v.regenAt)?+v.regenAt:Date.now()};});}catch(e){}
+function shState(){const a=activeShip();const id=a?a.id:'starter';return shPools[id]||(shPools[id]={pool:shMax(),regenAt:Date.now()});} // missing (old saves / new ships) = full
 let shSaveT=null;function shSave(now){if(now){try{localStorage.setItem(SH_KEY,JSON.stringify(shPools));}catch(e){}return;}if(shSaveT)return;shSaveT=setTimeout(()=>{shSaveT=null;shSave(true);},1000);}
 function shTick(){const st=shState(),now=Date.now();
- if(!shieldsOn()||st.pool>=SH_MAX){st.regenAt=now;return;}
- const pts=Math.floor((now-st.regenAt)/SH_REGEN_MS);if(pts<=0)return;
- const afford=Math.floor((inventory.hydrogen+1e-9)/SH_REGEN_H2),add=Math.min(pts,SH_MAX-st.pool,afford);
+ if(!shieldsOn()||st.pool>=shMax()){st.regenAt=now;return;}
+ const pts=Math.floor((now-st.regenAt)/shRegenMs());if(pts<=0)return;
+ const afford=Math.floor((inventory.hydrogen+1e-9)/SH_REGEN_H2),add=Math.min(pts,shMax()-st.pool,afford);
  if(add>0){st.pool+=add;inventory.hydrogen=Math.max(0,inventory.hydrogen-add*SH_REGEN_H2);updateH2();if(cargoPanel.style.display==='block')renderCargo();saveSoon();}
- st.regenAt=add<pts?now:st.regenAt+pts*SH_REGEN_MS; // no H2 (or full) -> no banked recharge
+ st.regenAt=add<pts?now:st.regenAt+pts*shRegenMs(); // no H2 (or full) -> no banked recharge
  shSave();updateShieldDisp();}
 function shAbsorb(cost){const st=shState();if(!shieldsOn()||st.pool<=0)return false;st.pool=Math.max(0,st.pool-cost);if(st.pool<=0){flashIcon('#leftStrip [data-mod="shields"]','DOWN');showToast('Shields down');}shSave();updateShieldDisp();return true;}
 function shFx(pship){const fx=document.createElement('div');fx.className='shield-fx';pship.parentElement.appendChild(fx);setTimeout(()=>fx.remove(),520);}
@@ -1518,7 +1522,7 @@ emImpact=function(i){const pship=document.querySelector('.ship.player');
 // UI: top bar + blue bar over the player ship
 {const _u=updateShieldDisp;updateShieldDisp=function(){_u();const p=Math.round(shState().pool);shieldDisp.textContent='🛡 '+p+(shieldsOn()?'':' (off)');
  const ps=document.querySelector('.ship.player');if(!ps)return;let b=ps.parentElement.querySelector('.sh-bar');if(!b||b.parentElement!==ps.parentElement){b=document.createElement('div');b.className='sh-bar';b.innerHTML='<i></i><span></span>';ps.parentElement.appendChild(b);}
- b.style.left=(ps.offsetLeft+ps.offsetWidth/2)+'px';b.style.top=Math.max(2,ps.offsetTop-14)+'px';b.querySelector('i').style.width=p+'%';b.querySelector('span').textContent='SHIELD '+p;b.classList.toggle('off',!shieldsOn()||p<=0);};}
+ b.style.left=(ps.offsetLeft+ps.offsetWidth/2)+'px';b.style.top=Math.max(2,ps.offsetTop-14)+'px';b.querySelector('i').style.width=Math.min(100,p/shMax()*100)+'%';b.querySelector('span').textContent='SHIELD '+p;b.classList.toggle('off',!shieldsOn()||p<=0);};}
 {const _sl=setLayout;setLayout=function(){const r=_sl.apply(this,arguments);document.querySelectorAll('.sh-bar').forEach(e=>e.remove());updateShieldDisp();return r;};}
 {const _aa=applyActive;applyActive=function(){const r=_aa.apply(this,arguments);if(typeof shPools!=='undefined')updateShieldDisp();return r;};}
 setInterval(()=>{shTick();updateShieldDisp();},250);
@@ -1545,9 +1549,9 @@ function renderShipOv(){const a=activeShip();document.getElementById('ovName').t
  ovShip.className='ship large player'+(a.type==='Light Frigate'?' frigate':'');document.getElementById('ovStage').style.height=a.type==='Light Frigate'?'530px':'';renderPlayerBays(ovShip,true);
  ovShip.querySelectorAll('.bay').forEach((el,i)=>{const b=playerBays[i];el.onclick=e=>{e.stopPropagation();showBayInfo(b,el);};});
  const cb=ovShip.querySelector('.cbay');if(cb)cb.onclick=e=>{e.stopPropagation();closeMenus();bayTitle.textContent='Collector bay';const f=fittedMod();
-  bayBody.innerHTML=`<div>Fitted: <b>${f||'Basic Collector'}</b></div><div style="font-size:10px;color:#89a;margin-top:2px">${f?'+50% '+CMODS[f].res.map(k=>RESN[k][1]).join(', '):'Standard yields'}</div><div class="cb-why" style="color:#89a">Fit/swap while docked at My Station</div>`;placeInfo(cb);};
+  bayBody.innerHTML=`<div>Fitted: <b>${collectorName()}</b></div><div style="font-size:10px;color:#89a;margin-top:2px">${collectorDesc()}</div><div class="cb-why" style="color:#89a">Fit/swap while docked at My Station</div>`;placeInfo(cb);};
  const p=Math.round(shState().pool);
- document.getElementById('ovStats').innerHTML=`<div>🛡 Shield pool <b>${p}</b>/100${shieldsOn()?'':' (off)'}</div><div>H₂ <b>${inventory.hydrogen.toFixed(1)}</b></div><div>Ammo <b>${cnt('Ammo')}</b></div><div>Missiles <b>${cnt('Missiles')}</b></div><div style="grid-column:1/3">🧲 Collector: <b>${fittedMod()||'Basic Collector'}</b></div>`;
+ document.getElementById('ovStats').innerHTML=`<div>🛡 Shield pool <b>${p}</b>/${shMax()}${shieldsOn()?'':' (off)'}</div><div>H₂ <b>${inventory.hydrogen.toFixed(1)}</b></div><div>Ammo <b>${cnt('Ammo')}</b></div><div>Missiles <b>${cnt('Missiles')}</b></div><div style="grid-column:1/3">🧲 Collector: <b>${collectorName()}</b> <span style="color:#89a">${collectorDesc()}</span></div>`;
  document.getElementById('ovWpn').innerHTML='<div style="color:#89a;font-size:11px;margin-bottom:2px">WEAPON SLOTS</div>'+[...document.querySelectorAll('#rightStrip .icon.wpn, .icon.wpn')].map(i=>i.dataset.name).filter((v,i,a)=>a.indexOf(v)===i).map(n=>`<div class="wr"><span>${n}</span><span>${wpnStatus(n)}</span></div>`).join('');}
 function placeInfo(el){const r=el.getBoundingClientRect(),o=shipOv.getBoundingClientRect();bayInfo.style.left=Math.max(4,Math.min(o.width-170,r.right-o.left+6))+'px';bayInfo.style.top=Math.max(4,r.top-o.top+shipOv.scrollTop)+'px';bayInfo.style.display='block';}
 {const _sb=showBayInfo;showBayInfo=function(bay,el){_sb(bay,el);if(shipOv.classList.contains('show'))placeInfo(el);};}
@@ -1582,7 +1586,7 @@ function gpsReadout(){const el=document.getElementById('gpsRead');if(!el)return;
 setInterval(()=>{if(gpsOn)gpsReadout();},1000);
 function gpsPerm(){try{if(navigator.permissions&&navigator.permissions.query)navigator.permissions.query({name:'geolocation'}).then(r=>{gpsSt.perm=r.state;r.onchange=()=>{gpsSt.perm=r.state;gpsReadout();};gpsReadout();}).catch(()=>{gpsSt.perm='n/a';});else gpsSt.perm='n/a';}catch(e){gpsSt.perm='n/a';}}
 // the ONE movement function (real GPS + sim buttons): north/east metres -> free movement, north = up
-function gpsMoveNE(n,e){const k=GPS_METERS_TO_UNITS*(warpActive()?2:1);let dx=e*k,dy=-n*k;
+function gpsMoveNE(n,e){const k=GPS_METERS_TO_UNITS*(warpActive()?warpMul():1);let dx=e*k,dy=-n*k;
  if(Math.hypot(dx,dy)>0.01)ship.angle=Math.atan2(dy,dx)*180/Math.PI+90;
  let nx=ship.x+dx,ny=ship.y+dy;const cx=Math.min(MAP_W-MAP_PAD,Math.max(MAP_PAD,nx)),cy=Math.min(MAP_H-MAP_PAD,Math.max(MAP_PAD,ny));
  if(cx!==nx||cy!==ny){if(Date.now()-gpsEdgeAt>5000){gpsEdgeAt=Date.now();showToast('Edge of charted space');}}
@@ -1701,6 +1705,139 @@ function artRotate(img,deg){const c=document.createElement('canvas'),q=deg%180!=
   im.onerror=()=>{failed=true;left--;};im.src=ART_SRC[k];});
  function artGo(){artReady=true;document.documentElement.classList.add('art');try{setLayout(playerIsLarge);renderPips();}catch(e){}
   try{if(shipOv.classList.contains('show'))renderShipOv();}catch(e){}try{const h=document.getElementById('msHangar');if(h&&msPanel.classList.contains('show'))h.innerHTML=hangarHTML();}catch(e){}}})();
+// ===== MODULE SYSTEM (v38): one model {id,type,tier 1-5,condition 0-100[,sub]} for every fitted part =====
+const MOD_KEY='spacegame_modules_v1',MOD_VER=1,TIER_MUL=1.25;GAME_KEYS.push(MOD_KEY);
+const MTYPES=['Shield','Reactor','Fuel','Cargo','Collector','Scanner','Laser','Missile Rack','Railgun','Warp Drive'];
+const CSUBS=['Basic','Gas Scoop','Ore Drill','Isotope Siphon'];
+const tierMul=t=>Math.pow(TIER_MUL,(t||1)-1);
+// T1 market price (credits); x2 per tier. Collector priced per subtype.
+const MOD_CR={Shield:120,Reactor:150,Fuel:80,Cargo:80,Scanner:90,Laser:130,'Missile Rack':140,Railgun:160,'Warp Drive':200,'Collector:Basic':60,'Collector:Gas Scoop':140,'Collector:Ore Drill':140,'Collector:Isotope Siphon':140};
+// T1 shipyard resources; tier t costs ceil(base x t)
+const MOD_RES={Shield:{ferrite:6,silicates:4,copper:2},Reactor:{ferrite:5,copper:4,isotopes:1},Fuel:{ferrite:6,silicates:3},Cargo:{ferrite:8,silicates:2},
+ Scanner:{silicates:5,copper:4,rare:1},Laser:{ferrite:6,copper:4,silicates:2},'Missile Rack':{ferrite:8,copper:3,volatiles:2},Railgun:{ferrite:9,copper:4,rare:1},'Warp Drive':{ferrite:7,copper:5,isotopes:2,volatiles:2},
+ 'Collector:Basic':{ferrite:5,copper:2},'Collector:Gas Scoop':{ferrite:8,copper:4,volatiles:3},'Collector:Ore Drill':{ferrite:10,silicates:4,copper:3},'Collector:Isotope Siphon':{ferrite:6,copper:4,isotopes:2,rare:1}};
+const modKeyOf=(type,sub)=>type==='Collector'?'Collector:'+(sub||'Basic'):type;
+const modPrice=(k,t)=>MOD_CR[k]*Math.pow(2,t-1);
+const modCost=(k,t)=>Object.fromEntries(Object.entries(MOD_RES[k]).map(([r,v])=>[r,Math.ceil(v*t)]));
+// fixed bay that houses each type (condition = 100 - that bay's damage while fitted)
+const MBAY={scout:{Laser:0,Railgun:0,Shield:1,Scanner:1,'Missile Rack':2,Cargo:2,Reactor:3,Fuel:3,'Warp Drive':3},
+ frigate:{Laser:0,Scanner:0,'Warp Drive':1,Fuel:1,'Missile Rack':2,Railgun:3,Reactor:4,Shield:4,Cargo:5}};
+const isFrig=s=>s&&s.type==='Light Frigate';
+const slotsOf=(s,type)=>type==='Laser'?2:type==='Cargo'&&isFrig(s)?2:1;
+let M={v:MOD_VER,next:1,ships:{},inv:[]};
+function newMod(type,tier,cond,sub){const m={id:'m'+(M.next++),type,tier:Math.max(1,Math.min(5,tier|0||1)),condition:Math.max(0,Math.min(100,Math.round(cond==null?100:cond)))};if(type==='Collector')m.sub=CSUBS.includes(sub)?sub:'Basic';return m;}
+function defaultFit(s,collSub){const out=[];MTYPES.forEach(t=>{for(let i=0;i<slotsOf(s,t);i++)out.push(newMod(t,1,100,t==='Collector'?collSub:undefined));});return out;}
+function modSave(){try{localStorage.setItem(MOD_KEY,JSON.stringify(M));}catch(e){}}
+function shipMods(s){s=s||activeShip();if(!s)return[];if(!M.ships[s.id]){M.ships[s.id]=defaultFit(s,'Basic');modSave();}return M.ships[s.id];}
+function fitted(type,s){return shipMods(s).filter(m=>m.type===type).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));}
+function modTier(type,i){const f=fitted(type);return f[i||0]?f[i||0].tier:1;}
+function bayOf(m,s){s=s||activeShip();const k=isFrig(s)?'frigate':'scout';const i=MBAY[k][m.type];return i==null?null:(s.bays||playerBays)[i];}
+function modCond(m,s){if(m.type==='Collector')return m.condition;const b=bayOf(m,s);return b?Math.max(0,100-Math.round(b.damage)):m.condition;}
+function modName(m){return (m.type==='Collector'?(m.sub==='Basic'?'Basic Collector':m.sub):m.type)+' T'+m.tier;}
+// ---- load + migration (old saves had no module store) ----
+(function modLoad(){let d=null;try{d=JSON.parse(localStorage.getItem(MOD_KEY)||'null');}catch(e){}
+ const okMod=m=>m&&typeof m==='object'&&MTYPES.includes(m.type);
+ if(d&&d.v===MOD_VER&&d.ships){M.next=Math.max(1,d.next|0);Object.entries(d.ships).forEach(([id,arr])=>{if(Array.isArray(arr))M.ships[id]=arr.filter(okMod).map(m=>({...newMod(m.type,m.tier,m.condition,m.sub),id:String(m.id||'m'+(M.next++))}));});
+  M.inv=(Array.isArray(d.inv)?d.inv:[]).filter(okMod).map(m=>({...newMod(m.type,m.tier,m.condition,m.sub),id:String(m.id||'m'+(M.next++))}));
+  hangar.forEach(s=>{const have=shipMods(s);MTYPES.forEach(t=>{const n=slotsOf(s,t)-have.filter(m=>m.type===t).length;for(let i=0;i<n;i++)have.push(newMod(t,1,100));});});}
+ else{// v0 -> v1: every ship gets its stock parts as T1; old collector fit becomes its Collector subtype
+  hangar.forEach(s=>{M.ships[s.id]=defaultFit(s,cfit[s.id]||'Basic');});
+  Object.keys(CMODS).forEach(n=>{const c=cnt(n);for(let i=0;i<c;i++)M.inv.push(newMod('Collector',1,100,n));delete items[n];});
+  cfit={};cfitSave();}
+ absorbDamaged(true);modSave();})();
+// "Damaged Module" salvage item -> real T1 module at 25% condition (type cycles through the list)
+function absorbDamaged(quiet){const c=cnt('Damaged Module');if(!c)return 0;for(let i=0;i<c;i++){const t=MTYPES[(M.next+i)%MTYPES.length];M.inv.push(newMod(t,1,25,t==='Collector'?CSUBS[1+(M.next%3)]:undefined));}
+ delete items['Damaged Module'];modSave();if(!quiet)saveSoon();return c;}
+{const _p=pickupSalvage;pickupSalvage=function(){capBegin();const r=_p.apply(this,arguments);const n=absorbDamaged(true);if(n){const m=M.inv[M.inv.length-1];showToast('Picked up: damaged '+modName(m)+' ('+m.condition+'%)');}capTrim('Salvage');return r;};}
+// ---- capacities ----
+const CARGO_T1=50,FUEL_T1=50;
+function cargoMax(){try{return Math.round(fitted('Cargo').reduce((a,m)=>a+CARGO_T1*tierMul(m.tier),0));}catch(e){return 1e9;}}
+function fuelMax(){try{return Math.round(fitted('Fuel').reduce((a,m)=>a+FUEL_T1*tierMul(m.tier),0));}catch(e){return 1e9;}}
+function cargoUsed(){return RES.filter(([k])=>k!=='hydrogen').reduce((a,[k])=>a+Math.floor(inventory[k]),0);}
+// trim anything added beyond the caps (stock already above a cap is kept, it just can't grow)
+let capSnap=null;function capBegin(){capSnap={...inventory};}
+function capTrim(why){if(!capSnap)return null;const S=capSnap;capSnap=null;let cut=[];
+ const h=inventory.hydrogen-S.hydrogen;if(h>0){const room=Math.max(0,fuelMax()-S.hydrogen),keep=Math.min(h,room);if(keep<h){inventory.hydrogen=S.hydrogen+keep;cut.push('fuel');}}
+ let room=Math.max(0,cargoMax()-RES.filter(([k])=>k!=='hydrogen').reduce((a,[k])=>a+Math.floor(S[k]),0));
+ RES.forEach(([k])=>{if(k==='hydrogen')return;const add=inventory[k]-S[k];if(add<=0)return;const keep=Math.min(add,room);room-=keep;if(keep<add){inventory[k]=S[k]+keep;cut.push('cargo');if(tally[k])tally[k]=Math.max(0,tally[k]-(add-keep));}});
+ if(cut.length){const now=Date.now();if(!capTrim.t||now-capTrim.t>4000){capTrim.t=now;showToast(cut.includes('cargo')?'Cargo full ('+cargoUsed()+'/'+cargoMax()+')'+(why?' — '+why+' trimmed':''):'Fuel tanks full ('+Math.floor(inventory.hydrogen)+'/'+fuelMax()+' H₂)');}
+  updateH2();if(cargoPanel.style.display==='block')renderCargo();}
+ return cut.length?cut:null;}
+{const _c=collectTick;collectTick=function(){capBegin();const S={...inventory};const r=_c.apply(this,arguments);const cut=capTrim();
+ if(cut&&collecting&&RES.every(([k])=>inventory[k]<=S[k]))stopCollect('Cargo full — collector stopped');if(cut&&typeof tallyRender==='function')tallyRender();return r;};
+ if(collectTimer){clearInterval(collectTimer);collectTimer=setInterval(()=>collectTick(),1000);}}
+updateH2=function(){const v=inventory.hydrogen,mx=fuelMax();h2Disp.textContent='H₂ '+Math.floor(Math.min(100,v/mx*100))+'%';h2Disp.title='Hydrogen: '+v.toFixed(1)+' / '+mx+' units';};
+// ---- tier effects ----
+function shMax(){try{return Math.round(100*tierMul(modTier('Shield')));}catch(e){return 100;}}
+function reactorOut(){try{return tierMul(modTier('Reactor'));}catch(e){return 1;}}
+function shRegenMs(){try{return 5000/(tierMul(modTier('Shield'))*reactorOut());}catch(e){return 5000;}}
+function warpMul(){try{return 2*tierMul(modTier('Warp Drive'));}catch(e){return 2;}}
+function scanRange(){return Math.round(60*tierMul(modTier('Scanner')));}
+const WBASE={'Laser 1':['Laser',0,10],'Laser 2':['Laser',1,10],'Missile 1':['Missile Rack',0,20],'Railgun 1':['Railgun',0,12]};
+Object.entries(WBASE).forEach(([n,[t,i,d]])=>{if(!WSPEC[n])return;Object.defineProperty(WSPEC[n],'dmg',{get:()=>Math.round(d*tierMul(modTier(t,i))),configurable:true});
+ if(n==='Missile 1')Object.defineProperty(WSPEC[n],'splash',{get:()=>Math.round(8*tierMul(modTier(t,i))),configurable:true});});
+// collector: fittedMod() keeps returning the specialised subtype (or null for Basic) so old code paths work
+fittedMod=function(){const c=fitted('Collector')[0];return c&&c.sub!=='Basic'?c.sub:null;};
+collectorName=function(){const c=fitted('Collector')[0];return c?modName(c):'Basic Collector T1';};
+function collectorBonusFrac(k){const c=fitted('Collector')[0];const t=c?c.tier:1,mul=tierMul(t);if(!c||c.sub==='Basic')return mul-1;return CMODS[c.sub].res.includes(k)?CMOD_BONUS*mul:0;}
+modBonus=function(k,n){const x=n*collectorBonusFrac(k);return Math.floor(x)+(Math.random()<x-Math.floor(x)?1:0);};
+function collectorDesc(){const c=fitted('Collector')[0];if(!c||c.sub==='Basic'){const f=Math.round((tierMul(c?c.tier:1)-1)*100);return f?'+'+f+'% all yields':'Standard yields';}
+ return '+'+Math.round(CMOD_BONUS*tierMul(c.tier)*100)+'% '+CMODS[c.sub].res.map(k=>RESN[k][1]).join(', ');}
+// scanner: POI card shows what's there only inside scanner range
+{const _u=updateCard;updateCard=function(){_u.apply(this,arguments);if(!selPoi)return;const h=document.getElementById('poiHint');if(!h)return;const d=Math.hypot(ship.x-selPoi.x,ship.y-selPoi.y),R=scanRange();
+ const y=(YIELDS[selPoi.type]||[]).map(r=>RESN[r[0]][1]);h.textContent+=d<=R?' · 📡 '+(y.length?y.join(', '):selPoi.type):' · 📡 beyond scan ('+R+' u)';};}
+// ---- install / swap (only docked at My Station) ----
+function installMod(id){if(!atMyStation()){showToast('Install only while docked at My Station');return;}const i=M.inv.findIndex(m=>m.id===id);if(i<0)return;const m=M.inv[i],s=activeShip(),arr=shipMods(s);
+ const same=arr.filter(x=>x.type===m.type);let old=null;if(same.length>=slotsOf(s,m.type)){old=same.sort((a,b)=>a.tier-b.tier||modCond(a,s)-modCond(b,s))[0];old.condition=modCond(old,s);arr.splice(arr.indexOf(old),1);M.inv.push(old);}
+ M.inv.splice(M.inv.indexOf(m),1);arr.push(m);modSave();saveNow();updateH2();updateShieldDisp();renderMS();if(cargoPanel.style.display==='block')renderCargo();
+ showToast('Installed '+modName(m)+' on '+s.name+(old?' — '+modName(old)+' to inventory':''));}
+document.addEventListener('click',e=>{const b=e.target.closest('button.minst');if(!b)return;e.stopPropagation();if(b.classList.contains('dis')){showToast(b.dataset.reason);return;}installMod(b.dataset.id);},true);
+function buildMod(k,t){const c=modCost(k,t),miss=Object.entries(c).filter(([r,v])=>inventory[r]<v);if(miss.length){showToast('Need '+miss.map(([r,v])=>v+' '+RESN[r][1]+' (have '+Math.floor(inventory[r])+')').join(', '));return;}
+ Object.entries(c).forEach(([r,v])=>inventory[r]-=v);const [type,sub]=k.split(':');const m=newMod(type,t,100,sub);M.inv.push(m);modSave();saveNow();renderMS();showToast('Built '+modName(m)+' — in inventory');}
+let yardSel='Shield';
+renderModules=function(){const box=document.getElementById('msModules');if(!myStation){box.innerHTML='';return;}const s=activeShip(),here=atMyStation();
+ let h='<div class="cargo-sec">🔧 Fitted on '+s.name+'</div><div class="mfit">'+shipMods(s).slice().sort((a,b)=>MTYPES.indexOf(a.type)-MTYPES.indexOf(b.type)).map(m=>'<span class="mtag">'+modName(m)+' <i>'+modCond(m,s)+'%</i></span>').join('')+'</div>';
+ h+='<div class="cargo-sec">📦 Module inventory ('+M.inv.length+')</div>'+(M.inv.length?M.inv.map(m=>'<div class="mrow"><span>'+modName(m)+' <i>'+m.condition+'%</i></span><button class="minst'+(here?'':' dis')+'" data-id="'+m.id+'" data-reason="Install only while docked at My Station">Install</button></div>').join(''):'<div class="mrow" style="color:#678">Empty — buy at Outpost Delta or build below</div>');
+ if(myStation.level>=2){h+='<div class="cargo-sec">🛠 Build module (T1–T5, resources)</div><div class="mtypes">'+Object.keys(MOD_RES).map(k=>'<button class="msel'+(k===yardSel?' on':'')+'" data-k="'+k+'">'+k.replace('Collector:','')+'</button>').join('')+'</div>'+
+  [1,2,3,4,5].map(t=>{const c=modCost(yardSel,t),why=Object.entries(c).some(([r,v])=>inventory[r]<v)?'Not enough resources':null;return '<button class="dock-svc mbuild2'+(why?' dis':'')+'" data-t="'+t+'">🔧 Build '+yardSel.replace('Collector:','')+' T'+t+' <small>('+modCostTxt(c)+')</small></button>';}).join('');}
+ else h+='<div class="mrow" style="color:#678">Module building unlocks at Lv 2</div>';
+ box.innerHTML=h;box.querySelectorAll('.msel').forEach(b=>b.onclick=e=>{e.stopPropagation();yardSel=b.dataset.k;renderModules();});
+ box.querySelectorAll('.mbuild2').forEach(b=>b.onclick=e=>{e.stopPropagation();buildMod(yardSel,+b.dataset.t);});};
+// collector bay inspect: swap between collector modules in inventory
+cbayControls=function(){const why=atMyStation()?null:'Fit/swap only while docked at My Station';const own=M.inv.filter(m=>m.type==='Collector');
+ return '<div class="cb-row">'+own.map(m=>`<button class="minst${why?' dis':''}" data-id="${m.id}" data-reason="${why||''}">Fit ${modName(m)}</button>`).join('')+'</div>'+(own.length?'':'<div class="cb-why" style="color:#89a">No spare collectors — market or Shipyard</div>')+(why?`<div class="cb-why">${why}</div>`:'');};
+showCollectorBay=function(el){closeMenus();bayTitle.textContent='Collector bay';bayBody.innerHTML=`<div>Fitted: <b>${collectorName()}</b></div><div style="font-size:10px;color:#89a;margin-top:2px">${collectorDesc()}</div>`+cbayControls();
+ const rect=el.getBoundingClientRect(),sr=document.getElementById('screen').getBoundingClientRect();bayInfo.style.left=Math.min(rect.right-sr.left+6,200)+'px';bayInfo.style.top=(rect.top-sr.top)+'px';bayInfo.style.display='block';showToast('Collector bay: '+collectorName());};
+// bay inspect lists the modules housed in that bay
+{const _s=showBayInfo;showBayInfo=function(bay,el){_s.apply(this,arguments);const s=activeShip();if(!s||!playerBays.includes(bay))return;const i=playerBays.indexOf(bay),k=isFrig(s)?'frigate':'scout';
+ const ms=shipMods(s).filter(m=>MBAY[k][m.type]===i);if(ms.length)bayBody.insertAdjacentHTML('beforeend','<div style="font-size:11px;margin-top:4px;color:#9cf">'+ms.map(m=>modName(m)+' · '+modCond(m,s)+'%').join('<br>')+'</div>');};}
+// market: Outpost Delta sells T1-T2 of every type
+const _canTrade=canTrade;canTrade=function(t){if(t.dmgMod)return M.inv.some(m=>m.condition<50)?null:'No damaged module in inventory';if(t.mod){if(credits<t.price)return'Not enough credits';return null;}
+ if(t.get&&t.get.hydrogen&&inventory.hydrogen+t.get.hydrogen>fuelMax())return'Fuel tanks full ('+Math.floor(inventory.hydrogen)+'/'+fuelMax()+')';return _canTrade(t);};
+const _haveText=haveText;haveText=function(t){if(t.dmgMod)return'Have '+M.inv.filter(m=>m.condition<50).length;if(t.mod)return'Owned '+M.inv.filter(m=>modKeyOf(m.type,m.sub)===t.mod&&m.tier===t.tier).length;return _haveText(t);};
+{const i=TRADES.findIndex(t=>t.item==='Damaged Module');if(i>=0)TRADES[i]={label:'Sell 1 damaged module (<50%)',dmgMod:true,cr:+50};}
+const _doTrade=doTrade;doTrade=function(t){const why=canTrade(t);if(why){showToast(why);return;}
+ if(t.dmgMod){const m=M.inv.filter(x=>x.condition<50).sort((a,b)=>a.condition-b.condition)[0];M.inv.splice(M.inv.indexOf(m),1);credits+=50;modSave();saveNow();renderMarket();showToast('Sold damaged '+modName(m)+' (+50 cr)');return;}
+ if(t.mod){const [type,sub]=t.mod.split(':');const m=newMod(type,t.tier,100,sub);M.inv.push(m);credits-=t.price;modSave();saveNow();renderMarket();showToast('Bought '+modName(m)+' (−'+t.price+' cr) — in Cargo');return;}
+ return _doTrade(t);};
+{const _r=renderMarket;renderMarket=function(){_r.apply(this,arguments);if(!/Outpost Delta/.test(dockedAt()))return;const L=document.getElementById('mktList');L.insertAdjacentHTML('beforeend','<div class="cargo-sec">🔧 Modules (T1–T2)</div>');
+ Object.keys(MOD_CR).forEach(k=>[1,2].forEach(tier=>{const t={label:k.replace('Collector:','')+(k.startsWith('Collector:')&&k!=='Collector:Basic'?' (Collector)':k==='Collector:Basic'?' Collector':'')+' <b class="tier">T'+tier+'</b>',mod:k,tier,price:modPrice(k,tier),cr:-modPrice(k,tier)};
+  const r=document.createElement('div');r.className='mkt-row';const why=canTrade(t);r.innerHTML=`<div>${t.label}<span class="have">${haveText(t)}</span></div><button ${why?'disabled':''}>−${t.price} cr</button>`;r.onclick=()=>doTrade(t);L.appendChild(r);}));};}
+// market trades of resources also respect caps
+{const _d=doTrade;doTrade=function(t){capBegin();const r=_d.apply(this,arguments);capTrim('purchase');return r;};}
+// cargo panel: used/max, fuel, module inventory with tiers
+{const _rc=renderCargo;renderCargo=function(){_rc.apply(this,arguments);const here=atMyStation();
+ cargoList.insertAdjacentHTML('afterbegin','<div class="res-row cap-row">📦 Cargo <span class="amt" id="cargoCap">'+cargoUsed()+'/'+cargoMax()+'</span></div><div class="res-row cap-row">⛽ Fuel (H₂) <span class="amt" id="fuelCap">'+Math.floor(inventory.hydrogen)+'/'+fuelMax()+'</span></div>');
+ cargoList.insertAdjacentHTML('beforeend','<div class="cargo-sec">Module inventory</div>'+(M.inv.length?M.inv.map(m=>'<div class="res-row mrow"><span>🔧 '+modName(m)+' <i>'+m.condition+'%</i></span><button class="minst'+(here?'':' dis')+'" data-id="'+m.id+'" data-reason="Install only while docked at My Station">Install</button></div>').join(''):'<div class="res-row" style="color:#567">None</div>')+
+  '<div class="cargo-sec">Fitted on '+activeShip().name+'</div><div class="mfit">'+shipMods().map(m=>'<span class="mtag">'+modName(m)+'</span>').join('')+'</div>');};}
+// ship view: tiers + capacities
+{const _o=renderShipOv;renderShipOv=function(){_o.apply(this,arguments);const s=activeShip();const st=document.getElementById('ovStats');
+ st.insertAdjacentHTML('beforeend','<div>📦 Cargo <b>'+cargoUsed()+'</b>/'+cargoMax()+'</div><div>⛽ Fuel <b>'+Math.floor(inventory.hydrogen)+'</b>/'+fuelMax()+'</div><div style="grid-column:1/3;font-size:11px">'+shipMods(s).slice().sort((a,b)=>MTYPES.indexOf(a.type)-MTYPES.indexOf(b.type)).map(m=>modName(m)+' <span style="color:#89a">'+modCond(m,s)+'%</span>').join(' · ')+'</div>');
+ const map={'Laser 1':['Laser',0],'Laser 2':['Laser',1],'Missile 1':['Missile Rack',0],'Railgun 1':['Railgun',0],'Collector':['Collector',0]};
+ document.querySelectorAll('#ovWpn .wr span:first-child').forEach(sp=>{const k=map[sp.textContent];if(k){const m=fitted(k[0])[k[1]];if(m)sp.textContent+=' · T'+m.tier;}});};}
+// new ships (shipyard / fast-track) get stock T1 parts automatically via shipMods(); keep saving with the main save
+{const _sv=saveNow;saveNow=function(){_sv.apply(this,arguments);if(!window.__resetting)modSave();};}
+updateH2();
 </script>
 </body>
 </html>
