@@ -417,6 +417,8 @@
   .rock-w.dead .rock-bar { display:none; } .rock-t { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:10px; color:#cde; white-space:nowrap; text-shadow:0 0 4px #000; }
   .ms-art { display:block; width:120px; height:120px; margin:0 auto -6px; }
   #orbitBar #devRocks { font-size:11px; }
+  .rock-lbl { position:absolute; left:50%; top:-14px; transform:translateX(-50%); font-size:10px; font-weight:800; white-space:nowrap; text-shadow:0 0 4px #000,0 0 2px #000; }
+  .rock-info { position:absolute; transform:translate(-50%,calc(-100% - 6px)); z-index:14; pointer-events:none; background:rgba(12,18,30,.95); border:1px solid #4a6a8a; border-radius:8px; padding:6px 9px; font-size:11px; color:#cde; text-align:center; white-space:nowrap; line-height:1.4; }
 </style>
 </head>
 <body>
@@ -2330,6 +2332,46 @@ orbitCollect.onclick=()=>collectorTap();
 //  - "DEV: Respawn rocks" (orbit bar, dev mode) -> refills every rock of the orbited asteroid field
 {const b=document.createElement('button');b.id='devRocks';b.className='dev';b.textContent='DEV: Respawn rocks';document.getElementById('orbitBar').appendChild(b);['pointerdown','pointerup'].forEach(ev=>b.addEventListener(ev,e=>e.stopPropagation()));
  b.onclick=()=>{const p=orbitRes();if(!p||RES_KIND(p)!=='field'){showToast('Orbit an asteroid field first');return;}rocksFor(p).rocks.forEach(r=>{r.amt=r.max;r.respawnAt=0;});saveRocks();renderResArt();showToast('DEV: rocks respawned');};}
+// ===== v50: PER-ROCK RESOURCE MIXES (Desi spec: ~70% main, rest secondary) =====
+// rows: [resource, min, max, chance] per harvest tick — same shape as YIELDS; ~5 units/tick like the old field yield (rare-earth: scarcer)
+const ROCK_MIX={
+ iron:     [['ferrite',3,5,1],['silicates',1,2,1]],
+ copper:   [['copper',3,5,1],['ferrite',1,2,1]],
+ silicate: [['silicates',3,5,1],['volatiles',1,2,1]],
+ carbon:   [['volatiles',3,5,1],['hydrogen',1,2,1]],
+ ice:      [['hydrogen',3,5,1],['volatiles',1,2,1]],
+ 'rare-earth':[['rare',1,2,1],['isotopes',1,1,.05]]};
+const ROCK_MAIN={iron:'ferrite',copper:'copper',silicate:'silicates',carbon:'volatiles',ice:'hydrogen','rare-earth':'rare'};
+// field themes: weights for [iron,copper,silicate,carbon,ice] (rare-earth: max 1 per field, 35% of fields)
+const FIELD_THEMES={metallic:[45,35,10,5,5],rocky:[20,10,45,15,10],icy:[5,5,15,25,50],carbonaceous:[10,5,20,50,15]};
+function fieldTheme(p){if(p.id==='asteroid')return'metallic';const t=Object.keys(FIELD_THEMES);return t[osmHash('theme:'+poiKeyOf(p))%t.length];}
+const _rocksForV49=rocksFor;
+rocksFor=function(p){const k=poiKeyOf(p);const f=rockState[k];if(f&&f.v===2&&Array.isArray(f.rocks))return f;
+ delete rockState[k];const base=_rocksForV49(p);const th=fieldTheme(p),w=FIELD_THEMES[th],tot=w.reduce((a,b)=>a+b,0);
+ let seed=osmHash('mix:'+k)||7;const rnd=()=>{seed^=seed<<13;seed>>>=0;seed^=seed>>>17;seed^=seed<<5;seed>>>=0;return seed/4294967296;};
+ const rareAt=rnd()<.35?Math.floor(rnd()*base.rocks.length):-1;
+ base.rocks.forEach((r,i)=>{if(i===rareAt){r.type=5;r.max=r.amt=5+Math.floor(rnd()*4);}else{let x=rnd()*tot,t=0;while(x>=w[t]){x-=w[t];t++;}r.type=t;}r.mix=ROCK_TYPES[r.type];});
+ base.v=2;base.theme=th;rockState[k]=base;saveRocks();return base;};
+function mixText(r){const m=ROCK_MIX[r.mix||ROCK_TYPES[r.type]];return m.map(([k,mn,mx,ch])=>RESN[k][1]+' '+(ch<1?Math.round(ch*100)+'% chance':mn===mx?mn:mn+'–'+mx)).join('<br>');}
+// harvest: swap the field's yield table for the targeted rock's mix during the tick (module bonuses apply per resource: Ore Drill → iron/copper/silicate rocks, Gas Scoop → ice/carbon, Isotope Siphon → rare-earth)
+{const _t=collectTick;collectTick=function(){const p=collecting;let r=null;
+ if(p&&RES_KIND(p)==='field'&&harvestRock&&harvestRock.key===poiKeyOf(p))r=rocksFor(p).rocks[harvestRock.i];
+ if(!r)return _t.apply(this,arguments);const old=YIELDS[p.type];YIELDS[p.type]=ROCK_MIX[r.mix||ROCK_TYPES[r.type]];try{return _t.apply(this,arguments);}finally{YIELDS[p.type]=old;}};}
+// labels: main resource on the targeted rock; long-press any rock for type + mix
+{const _r=renderResArt;renderResArt=function(){_r.apply(this,arguments);const p=orbitRes();if(!p||RES_KIND(p)!=='field')return;const f=rocksFor(p);
+ document.querySelectorAll('.rock-w').forEach(w=>{const r=f.rocks[+w.dataset.i];if(!r)return;let l=w.querySelector('.rock-lbl');if(!l){l=document.createElement('div');l.className='rock-lbl';w.appendChild(l);}
+  const k=ROCK_MAIN[r.mix||ROCK_TYPES[r.type]];l.textContent=RESN[k][1];l.style.color=RESN[k][2];l.style.display=w.classList.contains('tgt')?'block':'none';
+  const im=w.querySelector('img');if(im&&im.dataset.t!=String(r.type)){im.src=POI_ART.rocks[r.type];im.dataset.t=r.type;}});};}
+let rockLP=null;
+screenEl.addEventListener('pointerdown',e=>{const p=orbitRes();if(!p||RES_KIND(p)!=='field'||e.target.closest('.icon,button'))return;const h=hitRes(e.clientX,e.clientY);if(!h||h.miss)return;
+ const sx=e.clientX,sy=e.clientY;clearTimeout(rockLP&&rockLP.t);rockLP={sx,sy,t:setTimeout(()=>{rockLP.fired=true;showRockInfo(p,h.i);},500)};},true);
+screenEl.addEventListener('pointermove',e=>{if(rockLP&&!rockLP.fired&&Math.hypot(e.clientX-rockLP.sx,e.clientY-rockLP.sy)>10){clearTimeout(rockLP.t);rockLP=null;}},true);
+['pointerup','pointercancel'].forEach(ev=>screenEl.addEventListener(ev,e=>{if(rockLP){clearTimeout(rockLP.t);if(rockLP.fired){e.stopPropagation();rockLP.eat=Date.now();}if(!rockLP.fired)rockLP=null;}},true));
+screenEl.addEventListener('click',e=>{if(rockLP&&rockLP.eat&&Date.now()-rockLP.eat<600){e.stopPropagation();rockLP=null;}},true);
+function showRockInfo(p,i){const r=rocksFor(p).rocks[i];document.querySelectorAll('.rock-info').forEach(e=>e.remove());const w=document.querySelector('.rock-w[data-i="'+i+'"]');if(!w)return;
+ const d=document.createElement('div');d.className='rock-info';const nm=r.mix||ROCK_TYPES[r.type];
+ d.innerHTML='<b>'+nm.replace(/^./,c=>c.toUpperCase())+' rock</b><br>'+mixText(r)+'<br><small>'+(r.amt>0?r.amt+'/'+r.max+' left':'Depleted · respawns '+fmt(Math.max(0,r.respawnAt-Date.now())))+'</small>';
+ const root=w.parentElement.parentElement,rr=w.getBoundingClientRect(),pr=root.getBoundingClientRect();d.style.left=Math.max(70,Math.min(pr.width-70,rr.left+rr.width/2-pr.left))+'px';d.style.top=(rr.top-pr.top)+'px';root.appendChild(d);setTimeout(()=>d.remove(),3500);}
 </script>
 </body>
 </html>
