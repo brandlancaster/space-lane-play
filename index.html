@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Space Lane Demo — Map + Combat</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -363,6 +363,36 @@
   .mrow { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:12px; color:#cde; padding:2px 0; } .mrow button.minst, .cb-row button.minst { min-height:44px; padding:0 12px; border-radius:6px; border:1px solid #6c9; background:#1e3a2a; color:#dfe; font-size:12px; }
   button.minst.dis { opacity:.45; filter:grayscale(1); } .mtypes { display:flex; flex-wrap:wrap; gap:4px; } .msel { min-height:44px; padding:0 8px; font-size:11px; border-radius:6px; border:1px solid #456; background:#132030; color:#cde; } .msel.on { border-color:#fc8; color:#fc8; }
   .cap-row { color:#fd6; } b.tier { color:#fc8; font-size:11px; margin-left:3px; }
+  .icon.wpn.offline { opacity:.4; filter:grayscale(1); } .tbay.unk { background:rgba(120,130,150,.25) !important; }
+  #modDlg { position:absolute; inset:0; z-index:80; display:none; background:rgba(0,0,0,.6); align-items:center; justify-content:center; padding:16px; }
+  #modDlg.show { display:flex; } #modDlg .md-box { background:#0f1826; border:1px solid #2a4a6a; border-radius:10px; padding:12px; width:100%; max-height:calc(100% - 20px); overflow-y:auto; touch-action:pan-y; display:flex; flex-direction:column; gap:6px; }
+  #modDlg .md-h { font-size:13px; color:#cde; text-align:center; line-height:1.4; } #modDlg .md-b { min-height:44px; flex-shrink:0; border-radius:8px; border:1px solid #4a6a8a; background:#1e2a3a; color:#dfe; font-size:13px; padding:6px 10px; }
+  #modDlg .md-b i { color:#89a; font-style:normal; font-size:11px; } #modDlg .md-ok { border-color:#6c9; background:#1e3a2a; } #modDlg .md-b.dis { opacity:.45; } #modDlg .md-c { background:#2a1e1e; border-color:#866; }
+  /* ===== v41 phone polish ===== */
+  html, body { -webkit-tap-highlight-color:transparent; -webkit-text-size-adjust:100%; }
+  .phone, .phone * { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .phone input, .phone textarea { -webkit-user-select:text; user-select:text; }
+  .phone button, .phone .icon, .phone .bay, .phone .cbay, .phone svg, .phone .dock-svc, .phone .mkt-row { touch-action:manipulation; }
+  .cargo-btn { min-height:44px; min-width:44px; padding:0 10px; display:inline-flex; align-items:center; justify-content:center; }
+  #poiClose { min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; font-size:20px; top:-16px !important; right:-4px !important; border-radius:50% !important; background:#1e2a3a !important; border:1px solid #456 !important; color:#cde !important; z-index:2; } .poi-card { overflow:visible !important; }
+  .poi-card button.act { min-height:44px; } .mkt-row button { min-height:44px; min-width:44px; } .msel { min-width:44px; }
+  .hangar-row button.mk { min-height:44px; } .dock-svc.dev, #killBtn { min-height:44px; } #devBar button { min-height:44px; } #devBar { bottom:70px !important; }
+  .icon { font-size:7px; letter-spacing:-.3px; overflow:hidden; } .icon small { font-size:6.5px; } .view-large .view-label { top:50px !important; }
+  @media (max-width:500px) { body { background:#000; } .phone { width:calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right)); height:calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); margin:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); } }
+  .map-btn { min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; } .dock-svc { min-height:44px; flex-shrink:0; }
+  /* dev cheats only in dev mode (long-press the screen title 2 s) */
+  html:not(.dev) #fastBtn, html:not(.dev) .dock-svc.dev, html:not(.dev) #devBar, html:not(.dev) #killBtn, html:not(.dev) #gpsPanel .gp-g { display:none !important; }
+  .dev-badge { position:absolute; top:2px; right:50%; transform:translateX(50%); font-size:8px; color:#fc8; z-index:90; pointer-events:none; display:none; } html.dev .dev-badge { display:block; }
+  #streetsBtn { top:56px; right:10px; } #streetsBtn.on { background:#1a3a5a; border-color:#6cf; color:#fff; }
+  #osmAttr { position:absolute; right:4px; bottom:16px; z-index:31; font-size:9px; color:#9ab; background:rgba(5,8,15,.75); padding:2px 5px; border-radius:4px; display:none; }
+  #osmAttr a { color:#9cf; } #osmAttr.show { display:block; }
+  .osm-lanes .lane { filter:none; stroke-width:4; opacity:.35; } .osm-lanes .lane-core { stroke-width:1; opacity:.7; }
+  #suspectBadge { display:none; position:absolute; z-index:40; top:calc(env(safe-area-inset-top,0px) + 102px); left:50%; transform:translateX(-50%); min-height:44px; padding:0 4px; cursor:pointer; }
+  #suspectBadge > span { display:block; margin-top:6px; padding:5px 10px; border-radius:12px; background:#5a1010; border:1px solid #f66; color:#fdd; font-size:11px; font-weight:700; letter-spacing:.5px; white-space:nowrap; animation:susp 1.6s infinite; }
+  @keyframes susp { 50% { box-shadow:0 0 10px #f44; } }
+  .sus-note { color:#f99; font-size:11px; text-align:center; padding:4px; } .ms-perks { font-size:11px; color:#789; margin:4px 0 6px; line-height:1.6; } .ms-perks .on { color:#8e9; }
+  #marketPanel h2, #dockPanel h2, #myStationPanel h2 { padding:0 70px; overflow-wrap:anywhere; } /* v46: keep titles clear of the ✕ Close button */
 </style>
 </head>
 <body>
@@ -373,12 +403,12 @@
     <button class="cargo-btn" id="cargoBtnMap">📦 Cargo</button>
     <button class="cargo-btn" id="warpBtn">🌀 Warp</button>
     <button class="cargo-btn" id="shipBtnMap">🚀 Ship</button>
-    <button class="cargo-btn" id="gpsBtn">📡 GPS: OFF</button>
+    <button class="cargo-btn" id="gpsBtn">📡 GPS: OFF</button><button class="cargo-btn" id="streetsBtn">🗺 Streets: OFF</button><div id="osmAttr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
     <div id="gpsPanel"><div class="gp-t">GPS TEST (DEV)</div><div class="gp-g"><button id="gpsSimN">Sim N 10 m</button><button id="gpsSimE">Sim E 10 m</button><button id="gpsSimS">Sim S 10 m</button><button id="gpsSimW">Sim W 10 m</button></div><div id="gpsRead"></div><div id="gpsInfo"></div></div>
     <button class="cargo-btn" id="plantBtn" style="display:none">📍 Plant Beacon</button>
     <svg id="mapSvg" viewBox="0 0 374 828">
-      <defs><filter id="glow"><feGaussianBlur stdDeviation="3"/></filter></defs>
-      <g id="stars"></g><g id="lanes"></g><g id="pois"></g>
+      <defs><filter id="glow"><feGaussianBlur stdDeviation="3"/></filter><filter id="osmTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-0.06 -0.12 -0.02 0 0.20  -0.08 -0.17 -0.03 0 0.28  -0.13 -0.26 -0.05 0 0.46  0 0 0 1 0"/></filter></defs>
+      <g id="osm" filter="url(#osmTint)" opacity="0.85" style="display:none"></g><g id="stars"></g><g id="lanes"></g><g id="pois"></g>
       <line id="beam" class="collect-beam" style="display:none"/>
       <polyline id="warpTrail" points="" />
       <g id="playerShip"><polygon points="0,-11 8,9 0,4 -8,9" fill="#6cf" stroke="#fff" stroke-width="1"/></g>
@@ -392,7 +422,7 @@
     <div class="poi-card" id="siegeCard"><button class="close-x" id="scClose">×</button><h3>⚔ Siege on My Station</h3>
       <div class="sc-line" id="scCount"></div><div class="sc-line" id="scWin"></div>
       <div class="sc-line hullrow"></div><div class="row"><button class="act dis" id="scJoin">Join</button></div><div class="why" id="scWhy">Opens during window</div></div>
-    <div class="map-hint">Tap a lane to fly • Tap a POI to select</div>
+    <div class="map-hint">Tap anywhere to fly • Tap a POI to select</div>
   </div>
   <div class="screen" id="screen">
     <button class="map-btn" id="mapBtn">◀ Map</button>
@@ -706,9 +736,10 @@ POIS.forEach(makePoiEl);
 const ship={x:187,y:460,angle:0,path:[]};
 let selPoi=null;
 function svgPt(e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse());}
-function flyTo(p){ship.path=route(ship,p);}
+function clampMap(p){return{x:Math.min(368,Math.max(6,p.x)),y:Math.min(822,Math.max(6,p.y))};} // charted-space bounds (MAP_PAD 6)
+function flyTo(p){ship.path=[clampMap(p)];} // free flight: straight line, no lane pathfinding
 svg.addEventListener('pointerdown',e=>{const p=svgPt(e);const n=nearestOnLanes(p);
- if(n.d<25){flyTo(p);} else if(card.style.display==='block'){closeCard();} else showToast('Tap on a spacelane');});
+ if(card.style.display==='block')closeCard();flyTo(p);});
 function drawShip(){shipG.setAttribute('transform',`translate(${ship.x},${ship.y}) rotate(${ship.angle})`);}
 let last=performance.now();
 function tick(now){const dt=Math.min(.05,(now-last)/1000);last=now;let move=120*dt*(typeof warpActive==='function'&&warpActive()?warpMul():1);
@@ -1056,6 +1087,16 @@ function migratePassive(){const hostileNames=new Set(POIS.filter(isHostile).map(
   changed=true;setTimeout(()=>showToast('Recovered '+old.length+' old salvage crate(s) into cargo'),1500);}
  if(changed)saveNow();}
 
+// ===== v44: OSM raider damage + salvage survive reload (stored under 'osm:<osm id>', held aside until streets load) =====
+let osmHeldDmg={},osmHeldSalv=[];const isOsmKey=k=>String(k).startsWith('osm:'),isOsmRaiderName=n=>/^Raider Vex · /.test(n||'');
+{const _m=migratePassive;migratePassive=function(){Object.keys(targetDmg).forEach(k=>{if(isOsmKey(k)){osmHeldDmg[k]=targetDmg[k];delete targetDmg[k];}});
+ osmHeldSalv=osmHeldSalv.concat(salvage.filter(o=>isOsmKey(o.poi)));salvage=salvage.filter(o=>!isOsmKey(o.poi));return _m.apply(this,arguments);};}
+{const _s=saveNow;saveNow=function(){_s.apply(this,arguments);if(window.__resetting)return;try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(!d)return;const map={};
+ POIS.forEach(p=>{if(p.osm&&p.disposition==='hostile')map[p.name]='osm:'+p.id;});const td={};
+ Object.entries(osmHeldDmg).slice(-30).forEach(([k,v])=>td[k]=v);Object.entries(d.targetDmg||{}).forEach(([k,v])=>{if(map[k])td[map[k]]=v;else if(!isOsmRaiderName(k))td[k]=v;});d.targetDmg=td;
+ d.salvage=(d.salvage||[]).filter(o=>map[o.poi]||!isOsmRaiderName(o.poi)).map(o=>map[o.poi]?Object.assign({},o,{poi:map[o.poi]}):o).concat(osmHeldSalv.filter(o=>o.expiresAt>Date.now()));
+ localStorage.setItem(SAVE_KEY,JSON.stringify(d));}catch(e){}};}
+
 // ===== CARD BUTTON APPLICABILITY (greyed but tappable) =====
 function cardReasons(p){const far=!inRange(p)?'Fly closer ('+Math.round(Math.hypot(ship.x-p.x,ship.y-p.y))+' u away)':null;
  return{btnOrbit:far,
@@ -1164,12 +1205,12 @@ setInterval(updatePlantBtn,200);
  if(taps.length>=3){taps=[];credits+=200;saveNow();renderCargo();showToast('DEV: +200 cr');}});}
 
 // ===== BUILD KITS / STATION LEVELS =====
-const KIT_COST={ferrite:10,silicates:5},KIT_MAX=3;
+const KIT_COST={ferrite:10,silicates:5};var KIT_MAX_FN=()=>3;
 function kitsNeeded(lv){return lv===0?3:lv===1?5:Infinity;}
 document.getElementById('assembleBtn').onclick=()=>{const have=cnt('Build Kit');
- if(have>=KIT_MAX){showToast('Cargo full — max 3 kits');return;}
+ if(have>=KIT_MAX_FN()){showToast('Cargo full — max '+KIT_MAX_FN()+' kits');return;}
  if(inventory.ferrite<KIT_COST.ferrite||inventory.silicates<KIT_COST.silicates){showToast(`Need 10 Ferrite + 5 Silicates (have ${Math.floor(inventory.ferrite)} / ${Math.floor(inventory.silicates)})`);return;}
- inventory.ferrite-=KIT_COST.ferrite;inventory.silicates-=KIT_COST.silicates;items['Build Kit']=have+1;saveNow();showToast('Build Kit assembled ('+items['Build Kit']+'/3 in cargo)');};
+ inventory.ferrite-=KIT_COST.ferrite;inventory.silicates-=KIT_COST.silicates;items['Build Kit']=have+1;saveNow();showToast('Build Kit assembled ('+items['Build Kit']+'/'+KIT_MAX_FN()+' in cargo)');};
 function setDis(el,why){el.classList.toggle('dis',!!why);el.dataset.reason=why||'';}
 function renderMS(){if(!myStation)return;const need=kitsNeeded(myStation.level),k=myStation.kits||0;
  document.getElementById('msLevel').textContent='Level '+myStation.level;
@@ -1193,7 +1234,7 @@ document.getElementById('msRepair').onclick=()=>repairAction();
 
 // ===== ASSEMBLE KIT GREYING =====
 const assembleBtn=document.getElementById('assembleBtn');
-function assembleReason(){if(cnt('Build Kit')>=KIT_MAX)return'Cargo full — max 3 kits';
+function assembleReason(){if(cnt('Build Kit')>=KIT_MAX_FN())return'Cargo full — max '+KIT_MAX_FN()+' kits';
  if(inventory.ferrite<KIT_COST.ferrite||inventory.silicates<KIT_COST.silicates)return`Need 10 Ferrite + 5 Silicates (have ${Math.floor(inventory.ferrite)} / ${Math.floor(inventory.silicates)})`;return null;}
 function renderAssemble(){setDis(assembleBtn,assembleReason());}
 dockPanel.addEventListener('click',e=>{const b=e.target.closest('#assembleBtn');if(!b)return;renderAssemble();if(b.classList.contains('dis')){e.stopPropagation();showToast(b.dataset.reason);}},true);
@@ -1330,7 +1371,7 @@ function sKills(){return (siege&&siege.kills)||[];}
 // hull from timestamps: integrate living raiders over [windowStart, min(t, windowEnd)]
 function hullAt(t){if(!siege)return 100;const a=siege.windowStart,b=Math.min(t,siege.windowStart+SIEGE_WIN);if(b<=a)return 100;
  const ks=sKills().filter(k=>k<b).map(k=>Math.max(k,a)).sort((x,y)=>x-y);let alive=SIEGE_RAIDERS,cur=a,lost=0;
- ks.forEach(k=>{lost+=alive*(k-cur)/HULL_DRAIN_MS;cur=k;alive--;});lost+=alive*(b-cur)/HULL_DRAIN_MS;return Math.max(0,100-lost);}
+ ks.forEach(k=>{lost+=alive*(k-cur)/HULL_DRAIN_MS;cur=k;alive--;});lost+=alive*(b-cur)/HULL_DRAIN_MS;return Math.max(0,100-lost*turretMul());}
 function hullZeroAt(){const a=siege.windowStart,e=a+SIEGE_WIN;let lo=a,hi=e;if(hullAt(e)>0)return null;for(let i=0;i<50;i++){const m=(lo+hi)/2;hullAt(m)>0?lo=m:hi=m;}return hi;}
 function raidersLeft(){return SIEGE_RAIDERS-sKills().length;}
 siegeSave=function(){try{siege?localStorage.setItem(SIEGE_KEY,JSON.stringify(siege)):localStorage.removeItem(SIEGE_KEY);}catch(e){}};
@@ -1615,7 +1656,7 @@ function gpsStop(){if(gpsWatch!=null&&navigator.geolocation)try{navigator.geoloc
  try{localStorage.setItem(GPS_KEY,'0');}catch(e){}gpsUI();drawShip();}
 gpsBtn.onclick=e=>{e.stopPropagation();if(gpsOn){gpsStop();showToast('GPS off');}else if(gpsStart())showToast('GPS on — walk anywhere');};
 // while GPS is on, a tapped route is only a dashed guide line; nothing auto-flies
-{const _f=flyTo;flyTo=function(p){if(!gpsOn)return _f.apply(this,arguments);gpsRoute=route(ship,p);ship.path=[];gpsTarget=(p&&p.name)||'lane point';gpsSt.msg='Guide to '+gpsTarget+' — walk there';gpsUI();};}
+{const _f=flyTo;flyTo=function(p){if(!gpsOn)return _f.apply(this,arguments);gpsRoute=[clampMap(p)];ship.path=[];gpsTarget=(p&&p.name)||'open space';gpsSt.msg='Guide to '+gpsTarget+' — walk there';gpsUI();};}
 // ===== DEV CHEATS (REMOVE BEFORE PLAYTEST) =====
 //  - GPS test panel (visible only while GPS is on): "Sim N/E/S/W 10 m" feed gpsDelta(north,east) -> gpsMoveNE(), same path as real fixes
 [['N',10,0],['E',0,10],['S',-10,0],['W',0,-10]].forEach(([d,n,e])=>{document.getElementById('gpsSim'+d).onclick=()=>{gpsDelta(n,e);};});
@@ -1733,9 +1774,12 @@ function hasMod(type,i){return fitted(type).length>(i||0);}
 function modSave(){try{localStorage.setItem(MOD_KEY,JSON.stringify(M));}catch(e){}}
 function shipMods(s){s=s||activeShip();if(!s)return[];if(!M.ships[s.id]){M.ships[s.id]=defaultFit(s,'Basic');modSave();}return M.ships[s.id];}
 function fitted(type,s){return shipMods(s).filter(m=>m.type===type).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));}
+function mmul(m){return tierMul(m.tier)*(modCond(m)<50?0.5:1);} // fitted module below 50% works at half strength
+function modMul(type,i){const f=fitted(type)[i||0];return f?mmul(f):1;}
 function modTier(type,i){const f=fitted(type);return f[i||0]?f[i||0].tier:1;}
 function bayOf(m,s){s=s||activeShip();const k=isFrig(s)?'frigate':'scout';const i=MBAY[k][m.type];return i==null?null:(s.bays||playerBays)[i];}
-function modCond(m,s){if(m.type==='Collector')return m.condition;const b=bayOf(m,s);return b?Math.max(0,100-Math.round(b.damage)):m.condition;}
+function modCond(m){return m.condition;} // module wear only; bay damage stays a bay property (bays repaired by Repair)
+function bayDead(m,s){const b=bayOf(m,s);return !!b&&b.damage>=100;}
 function modName(m){return (m.type==='Collector'?(m.sub==='Basic'?'Basic Collector':m.sub):m.type)+' T'+m.tier;}
 // ---- load + migration (old saves had no module store) ----
 (function modLoad(){let d=null;try{d=JSON.parse(localStorage.getItem(MOD_KEY)||'null');}catch(e){}
@@ -1754,8 +1798,8 @@ function absorbDamaged(quiet){const c=cnt('Damaged Module');if(!c)return 0;for(l
 {const _p=pickupSalvage;pickupSalvage=function(){capBegin();const r=_p.apply(this,arguments);const n=absorbDamaged(true);if(n){const m=M.inv[M.inv.length-1];showToast('Picked up: damaged '+modName(m)+' ('+m.condition+'%)');}capTrim('Salvage');return r;};}
 // ---- capacities ----
 const CARGO_T1=50,FUEL_T1=50;
-function cargoMax(){try{return Math.round(fitted('Cargo').reduce((a,m)=>a+CARGO_T1*tierMul(m.tier),0));}catch(e){return 1e9;}}
-function fuelMax(){try{return Math.round(fitted('Fuel').reduce((a,m)=>a+FUEL_T1*tierMul(m.tier),0));}catch(e){return 1e9;}}
+function cargoMax(){try{return Math.round(fitted('Cargo').reduce((a,m)=>a+CARGO_T1*mmul(m),0));}catch(e){return 1e9;}}
+function fuelMax(){try{return Math.round(fitted('Fuel').reduce((a,m)=>a+FUEL_T1*mmul(m),0));}catch(e){return 1e9;}}
 function cargoUsed(){return RES.filter(([k])=>k!=='hydrogen').reduce((a,[k])=>a+Math.floor(inventory[k]),0);}
 // trim anything added beyond the caps (stock already above a cap is kept, it just can't grow)
 let capSnap=null;function capBegin(){capSnap={...inventory};}
@@ -1771,32 +1815,40 @@ function capTrim(why){if(!capSnap)return null;const S=capSnap;capSnap=null;let c
  if(collectTimer){clearInterval(collectTimer);collectTimer=setInterval(()=>collectTick(),1000);}}
 updateH2=function(){const v=inventory.hydrogen,mx=fuelMax();h2Disp.textContent='H₂ '+Math.floor(Math.min(100,v/mx*100))+'%';h2Disp.title='Hydrogen: '+v.toFixed(1)+' / '+mx+' units';};
 // ---- tier effects ----
-function shMax(){try{return Math.round(100*tierMul(modTier('Shield')));}catch(e){return 100;}}
-function reactorOut(){try{return tierMul(modTier('Reactor'));}catch(e){return 1;}}
-function shRegenMs(){try{return 5000/(tierMul(modTier('Shield'))*reactorOut());}catch(e){return 5000;}}
-function warpMul(){try{return 2*tierMul(modTier('Warp Drive'));}catch(e){return 2;}}
-function scanRange(){return hasMod('Scanner')?Math.round(60*tierMul(modTier('Scanner'))):0;}
+function shMax(){try{return Math.round(100*modMul('Shield'));}catch(e){return 100;}}
+function reactorOut(){try{return modMul('Reactor');}catch(e){return 1;}}
+function shRegenMs(){try{return 5000/(modMul('Shield')*reactorOut());}catch(e){return 5000;}}
+function warpMul(){try{return 2*modMul('Warp Drive');}catch(e){return 2;}}
+function scanRange(){return hasMod('Scanner')?Math.round(60*modMul('Scanner')):0;}
 const WBASE={'Laser 1':['Laser',0,10],'Laser 2':['Laser',1,10],'Missile 1':['Missile Rack',0,20],'Railgun 1':['Railgun',0,12]};
-Object.entries(WBASE).forEach(([n,[t,i,d]])=>{if(!WSPEC[n])return;Object.defineProperty(WSPEC[n],'dmg',{get:()=>Math.round(d*tierMul(modTier(t,i))),configurable:true});
- if(n==='Missile 1')Object.defineProperty(WSPEC[n],'splash',{get:()=>Math.round(8*tierMul(modTier(t,i))),configurable:true});});
+Object.entries(WBASE).forEach(([n,[t,i,d]])=>{if(!WSPEC[n])return;Object.defineProperty(WSPEC[n],'dmg',{get:()=>Math.round(d*modMul(t,i)),configurable:true});
+ if(n==='Missile 1')Object.defineProperty(WSPEC[n],'splash',{get:()=>Math.round(8*modMul(t,i)),configurable:true});});
 // weapons with no fitted module are offline
 {const _tf=toggleFiring;toggleFiring=function(n){const w=WBASE[n];if(w&&!firing[n]&&!hasMod(w[0],w[1])){showToast(n+' — no '+w[0]+' fitted (install at My Station)');return;}return _tf.apply(this,arguments);};}
 {const _ws=wpnStatus;wpnStatus=function(n){const w=WBASE[n];if(w&&!hasMod(w[0],w[1]))return 'Empty slot — no '+w[0];return _ws.apply(this,arguments);};}
 // collector: fittedMod() keeps returning the specialised subtype (or null for Basic) so old code paths work
 fittedMod=function(){const c=fitted('Collector')[0];return c&&c.sub!=='Basic'?c.sub:null;};
 collectorName=function(){const c=fitted('Collector')[0];return c?modName(c):'Basic Collector T1';};
-function collectorBonusFrac(k){const c=fitted('Collector')[0];const t=c?c.tier:1,mul=tierMul(t);if(!c||c.sub==='Basic')return mul-1;return CMODS[c.sub].res.includes(k)?CMOD_BONUS*mul:0;}
+function collectorBonusFrac(k){const c=fitted('Collector')[0];const mul=c?mmul(c):1;if(!c||c.sub==='Basic')return mul-1;return CMODS[c.sub].res.includes(k)?CMOD_BONUS*mul:0;}
 modBonus=function(k,n){const x=n*collectorBonusFrac(k);return Math.floor(x)+(Math.random()<x-Math.floor(x)?1:0);};
-function collectorDesc(){const c=fitted('Collector')[0];if(!c||c.sub==='Basic'){const f=Math.round((tierMul(c?c.tier:1)-1)*100);return f?'+'+f+'% all yields':'Standard yields';}
- return '+'+Math.round(CMOD_BONUS*tierMul(c.tier)*100)+'% '+CMODS[c.sub].res.map(k=>RESN[k][1]).join(', ');}
+function collectorDesc(){const c=fitted('Collector')[0];if(!c||c.sub==='Basic'){const f=Math.round(((c?mmul(c):1)-1)*100);return f?'+'+f+'% all yields':'Standard yields';}
+ return '+'+Math.round(CMOD_BONUS*mmul(c)*100)+'% '+CMODS[c.sub].res.map(k=>RESN[k][1]).join(', ');}
 // scanner: POI card shows what's there only inside scanner range
 {const _u=updateCard;updateCard=function(){_u.apply(this,arguments);if(!selPoi)return;const h=document.getElementById('poiHint');if(!h)return;const d=Math.hypot(ship.x-selPoi.x,ship.y-selPoi.y),R=scanRange();
  const y=(YIELDS[selPoi.type]||[]).map(r=>RESN[r[0]][1]);h.textContent+=!R?' · 📡 no scanner fitted':d<=R?' · 📡 '+(y.length?y.join(', '):selPoi.type):' · 📡 beyond scan ('+R+' u)';};}
 // ---- install / swap (only docked at My Station) ----
-function installMod(id){if(!atMyStation()){showToast('Install only while docked at My Station');return;}const i=M.inv.findIndex(m=>m.id===id);if(i<0)return;const m=M.inv[i],s=activeShip(),arr=shipMods(s);
- const same=arr.filter(x=>x.type===m.type);let old=null;if(same.length>=slotsOf(s,m.type)){old=same.sort((a,b)=>a.tier-b.tier||modCond(a,s)-modCond(b,s))[0];old.condition=modCond(old,s);arr.splice(arr.indexOf(old),1);M.inv.push(old);}
- M.inv.splice(M.inv.indexOf(m),1);arr.push(m);modSave();saveNow();updateH2();updateShieldDisp();renderMS();if(cargoPanel.style.display==='block')renderCargo();
+// install: free capacity -> just fit; ship full (Scout 8 / Frigate 12) -> pick which fitted module to replace
+const SHIP_CAP=s=>isFrig(s)?12:8;
+function installMod(id,replaceId){if(!atMyStation()){showToast('Install only while docked at My Station');return;}const m=M.inv.find(x=>x.id===id);if(!m)return;const s=activeShip(),arr=shipMods(s);
+ let old=null;if(arr.length>=SHIP_CAP(s)){if(!replaceId){openReplacePicker(m);return;}old=arr.find(x=>x.id===replaceId);if(!old)return;old.condition=modCond(old,s);arr.splice(arr.indexOf(old),1);M.inv.push(old);}
+ M.inv.splice(M.inv.indexOf(m),1);arr.push(m);modSave();saveNow();updateH2();updateShieldDisp();renderMS();if(cargoPanel.style.display==='block')renderCargo();closeModDlg();
  showToast('Installed '+modName(m)+' on '+s.name+(old?' — '+modName(old)+' to inventory':''));}
+const modDlg=document.createElement('div');modDlg.id='modDlg';document.querySelector('.phone').appendChild(modDlg);
+['pointerdown','pointerup','click'].forEach(ev=>modDlg.addEventListener(ev,e=>e.stopPropagation()));
+function closeModDlg(){modDlg.classList.remove('show');modDlg.innerHTML='';}
+function openReplacePicker(m){const s=activeShip();modDlg.innerHTML='<div class="md-box"><div class="md-h">Install '+modName(m)+' — all '+SHIP_CAP(s)+' bays full.<br>Replace which module? (it goes to inventory)</div>'+
+ shipMods(s).map(x=>'<button class="md-b" data-r="'+x.id+'">'+modName(x)+' <i>'+modCond(x,s)+'%</i></button>').join('')+'<button class="md-b md-c">Cancel</button></div>';
+ modDlg.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>installMod(m.id,b.dataset.r));modDlg.querySelector('.md-c').onclick=closeModDlg;modDlg.classList.add('show');}
 document.addEventListener('click',e=>{const b=e.target.closest('button.minst');if(!b)return;e.stopPropagation();if(b.classList.contains('dis')){showToast(b.dataset.reason);return;}installMod(b.dataset.id);},true);
 function buildMod(k,t){const c=modCost(k,t),miss=Object.entries(c).filter(([r,v])=>inventory[r]<v);if(miss.length){showToast('Need '+miss.map(([r,v])=>v+' '+RESN[r][1]+' (have '+Math.floor(inventory[r])+')').join(', '));return;}
  Object.entries(c).forEach(([r,v])=>inventory[r]-=v);const [type,sub]=k.split(':');const m=newMod(type,t,100,sub);M.inv.push(m);modSave();saveNow();renderMS();showToast('Built '+modName(m)+' — in inventory');}
@@ -1844,6 +1896,281 @@ const _doTrade=doTrade;doTrade=function(t){const why=canTrade(t);if(why){showToa
 // new ships (shipyard / fast-track) get stock T1 parts automatically via shipMods(); keep saving with the main save
 {const _sv=saveNow;saveNow=function(){_sv.apply(this,arguments);if(!window.__resetting)modSave();};}
 updateH2();
+// ===== v39: power, warp, sensors, salvaged modules, module repair / resale =====
+function reactorOK(){const r=fitted('Reactor')[0];return !!r&&modCond(r)>0&&!bayDead(r);}
+function sensorsOK(){return reactorOK()&&hasMod('Scanner')&&modCond(fitted('Scanner')[0])>0&&!bayDead(fitted('Scanner')[0]);}
+{const _so=shieldsOn;shieldsOn=function(){return _so.apply(this,arguments)&&reactorOK();};}
+{const _tf=toggleFiring;toggleFiring=function(n){if(WBASE[n]&&!firing[n]&&!reactorOK()){showToast(n+' offline — no working Reactor');return;}return _tf.apply(this,arguments);};}
+{const _sw=setWarp;setWarp=function(on){if(on&&!hasMod('Warp Drive')){showToast('No Warp Drive fitted — warp offline');return;}if(on&&(modCond(fitted('Warp Drive')[0])<=0||bayDead(fitted('Warp Drive')[0]))){showToast('Warp Drive destroyed — warp offline');return;}return _sw.apply(this,arguments);};}
+function powerTick(){const ok=reactorOK();Object.entries(WBASE).forEach(([n,[t,i]])=>{const ic=iconOf(n);if(!ic)return;const off=!ok||!hasMod(t,i);ic.classList.toggle('offline',off);if(off&&firing[n])stopFiring(n,true);});
+ const nw=!hasMod('Warp Drive')||modCond(fitted('Warp Drive')[0])<=0||bayDead(fitted('Warp Drive')[0]);warpBtn.classList.toggle('dis',nw||shipDisabled());if(nw){warpBtn.title='No working Warp Drive';if(warpOn())setWarp(false,true);}
+}
+setInterval(()=>{try{powerTick();}catch(e){}},500);
+document.addEventListener('click',e=>{const ic=e.target.closest('.icon.wpn.offline');if(!ic)return;const w=WBASE[ic.dataset.name];if(!w)return;e.stopPropagation();e.preventDefault();
+ showToast(!reactorOK()?ic.dataset.name+' offline — no working Reactor':ic.dataset.name+' — no '+w[0]+' fitted');},true);
+// enemy bays: unknown without working sensors (Scanner + Reactor)
+{const _rt=renderTargetBays;renderTargetBays=function(){_rt.apply(this,arguments);if(sensorsOK())return;document.querySelectorAll('.tbay').forEach(el=>{el.classList.remove('dmg-red','dmg-orange','dmg-yellow');el.classList.add('unk');});};}
+{const _s=showBayInfo;showBayInfo=function(bay,el){_s.apply(this,arguments);if(el&&el.classList.contains('tbay')&&!sensorsOK()){const d=bayBody.querySelector('.dmg');if(d){d.textContent='Damage: Unknown';d.style.color='#89a';}
+ bayBody.insertAdjacentHTML('beforeend','<div style="font-size:10px;color:#89a">'+(reactorOK()?'No Scanner fitted':'Sensors unpowered — no Reactor')+'</div>');}};}
+// salvaged modules: T1 70% / T2 25% / T3 5%, 20-60% condition
+function salvagedMod(){const r=Math.random(),t=r<0.7?1:r<0.95?2:3,type=MTYPES[Math.floor(Math.random()*MTYPES.length)];return newMod(type,t,20+Math.floor(Math.random()*41),type==='Collector'?CSUBS[Math.floor(Math.random()*4)]:undefined);}
+const MOD_DROP_FROM=['Raider Vex','Siege Raider'];
+{const _p=pickupSalvage;pickupSalvage=function(o){const fresh=o&&!o.lootTaken&&salvage.includes(o)&&MOD_DROP_FROM.includes(o.poi);const r=_p.apply(this,arguments);
+ if(fresh&&!salvage.includes(o)){const n=1+(Math.random()<0.5?1:0),got=[];for(let i=0;i<n;i++){const m=salvagedMod();M.inv.push(m);got.push(modName(m)+' '+m.condition+'%');}modSave();saveSoon();
+  setTimeout(()=>showToast('🔧 Salvaged module'+(n>1?'s':'')+': '+got.join(', ')),1300);if(cargoPanel.style.display==='block')renderCargo();}return r;};}
+// module repair at any dock: Ferrite + H2, scaled by tier and missing condition
+function modRepairCost(m){const miss=100-modCond(m);return{ferrite:Math.ceil(miss*0.2*m.tier),hydrogen:Math.ceil(miss*0.1*m.tier)};}
+function allMods(){const s=activeShip();return shipMods(s).map(m=>({m,where:'fitted'})).concat(M.inv.map(m=>({m,where:'inventory'})));}
+function openRepairDlg(){const L=allMods().filter(x=>modCond(x.m)<100);
+ modDlg.innerHTML='<div class="md-box"><div class="md-h">🔧 Repair module → 100%<br><small>Have '+Math.floor(inventory.ferrite)+' Fe · '+Math.floor(inventory.hydrogen)+' H₂</small></div>'+(L.length?L.map(({m,where})=>{const c=modRepairCost(m);
+  return '<button class="md-b" data-id="'+m.id+'">'+modName(m)+' <i>'+modCond(m)+'% · '+where+'</i><br><small>'+c.ferrite+' Fe + '+c.hydrogen+' H₂</small></button>';}).join(''):'<div class="md-h" style="color:#89a">Nothing needs repair</div>')+'<button class="md-b md-c">Close</button></div>';
+ modDlg.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>confirmRepair(b.dataset.id));modDlg.querySelector('.md-c').onclick=closeModDlg;modDlg.classList.add('show');}
+function confirmRepair(id){const x=allMods().find(q=>q.m.id===id);if(!x)return;const m=x.m,c=modRepairCost(m),bay=x.where==='fitted'?bayOf(m):null;
+ const why=inventory.ferrite<c.ferrite?'Need '+c.ferrite+' Ferrite (have '+Math.floor(inventory.ferrite)+')':inventory.hydrogen<c.hydrogen?'Need '+c.hydrogen+' H₂ (have '+Math.floor(inventory.hydrogen)+')':null;
+ modDlg.innerHTML='<div class="md-box"><div class="md-h">Repair '+modName(m)+' from '+modCond(m)+'% to 100%?<br><b>Cost: '+c.ferrite+' Ferrite + '+c.hydrogen+' H₂</b>'+(why?'<br><span style="color:#f88">'+why+'</span>':'')+'</div>'+
+  '<button class="md-b md-ok'+(why?' dis':'')+'">Confirm repair</button><button class="md-b md-c">Back</button></div>';
+ modDlg.querySelector('.md-ok').onclick=()=>{if(why){showToast(why);return;}inventory.ferrite-=c.ferrite;inventory.hydrogen-=c.hydrogen;m.condition=100;
+  modSave();saveNow();updateH2();try{renderPlayerBays(document.querySelector('#screen .ship.player'),playerIsLarge);}catch(e){}if(msPanel.classList.contains('show'))renderMS();showToast('Repaired '+modName(m)+' to 100% (−'+c.ferrite+' Fe, −'+c.hydrogen+' H₂)');openRepairDlg();};
+ modDlg.querySelector('.md-c').onclick=openRepairDlg;}
+['dockPanel','myStationPanel'].forEach(pid=>{const P=document.getElementById(pid),u=P.querySelector('.undock');const b=document.createElement('button');b.className='dock-svc';b.textContent='🔧 Repair module';b.onclick=e=>{e.stopPropagation();openRepairDlg();};P.insertBefore(b,u);});
+// market buys modules: 40% of list price (x2 per tier) x condition
+{const i=TRADES.findIndex(t=>t.dmgMod);if(i>=0)TRADES.splice(i,1);}
+const modSellPrice=m=>Math.max(1,Math.round(0.4*modPrice(modKeyOf(m.type,m.sub),m.tier)*m.condition/100));
+{const _r=renderMarket;renderMarket=function(){_r.apply(this,arguments);const L=document.getElementById('mktList');L.insertAdjacentHTML('beforeend','<div class="cargo-sec">💰 Sell modules (40% of list × condition)</div>'+(M.inv.length?'':'<div class="mkt-row" style="color:#678">No modules in inventory</div>'));
+ M.inv.forEach(m=>{const r=document.createElement('div');r.className='mkt-row';const pr=suspectSell(modSellPrice(m));r.innerHTML='<div>Sell '+modName(m)+'<span class="have">'+m.condition+'% condition'+(pr<modSellPrice(m)?' · Suspect −50%':'')+'</span></div><button>+'+pr+' cr</button>';
+  r.onclick=()=>{const k=M.inv.indexOf(m);if(k<0)return;M.inv.splice(k,1);credits+=pr;modSave();saveNow();renderMarket();showToast('Sold '+modName(m)+' (+'+pr+' cr)');};L.appendChild(r);});};}
+// DEV CHEATS: Fast-track also adds one salvaged module (T2 at 35%) for repair/resale testing
+{const _f=fastTrack;fastTrack=function(){const m=newMod(MTYPES[Math.floor(Math.random()*MTYPES.length)],2,35);if(m.type==='Collector')m.sub='Ore Drill';M.inv.push(m);modSave();_f.apply(this,arguments);setTimeout(()=>showToast('🧪 +salvaged '+modName(m)+' 35%'),1600);};}
+// ===== FREE FLIGHT: destination marker + straight guide line (also shows the GPS guide target) =====
+const destLine=document.createElementNS(NS,'line'),destMk=document.createElementNS(NS,'g');destLine.setAttribute('stroke','#9cf');destLine.setAttribute('stroke-width','1.5');destLine.setAttribute('stroke-dasharray','5 4');destLine.setAttribute('opacity','.75');destLine.setAttribute('pointer-events','none');
+destMk.setAttribute('pointer-events','none');destMk.innerHTML='<circle r="7" fill="none" stroke="#9cf" stroke-width="1.5"/><circle r="2" fill="#9cf"/>';shipG.parentNode.insertBefore(destLine,shipG);shipG.parentNode.insertBefore(destMk,shipG);
+function drawDest(){const t=ship.path.length?ship.path[ship.path.length-1]:(typeof gpsOn!=='undefined'&&gpsOn&&gpsRoute.length?gpsRoute[gpsRoute.length-1]:null);const on=!!t;
+ destLine.style.display=destMk.style.display=on?'':'none';if(!on)return;destLine.setAttribute('x1',ship.x);destLine.setAttribute('y1',ship.y);destLine.setAttribute('x2',t.x);destLine.setAttribute('y2',t.y);destMk.setAttribute('transform','translate('+t.x.toFixed(1)+','+t.y.toFixed(1)+')');}
+{const _d=drawShip;drawShip=function(){_d.apply(this,arguments);drawDest();};}
+{const _f=flyTo;flyTo=function(){const r=_f.apply(this,arguments);drawDest();return r;};}
+drawDest();
+// ===== DEV MODE switch: long-press the screen title (map or combat) for 2 s; saved, cleared by Reset =====
+const DEV_KEY='spacegame_dev_v1';GAME_KEYS.push(DEV_KEY);
+function setDev(on,quiet){document.documentElement.classList.toggle('dev',on);try{localStorage.setItem(DEV_KEY,on?'1':'0');}catch(e){}if(!quiet)showToast('🧪 Dev mode '+(on?'ON — cheats visible':'OFF'));}
+try{setDev(localStorage.getItem(DEV_KEY)==='1',true);}catch(e){}
+{const b=document.createElement('div');b.className='dev-badge';b.textContent='DEV';document.querySelector('.phone').appendChild(b);}
+document.querySelectorAll('.map-top,#modeLabel').forEach(el=>{let t=null;const clr=()=>{clearTimeout(t);t=null;};
+ el.addEventListener('pointerdown',e=>{e.stopPropagation();clr();t=setTimeout(()=>{t=null;setDev(!document.documentElement.classList.contains('dev'));},2000);});
+ ['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev,clr));el.addEventListener('contextmenu',e=>e.preventDefault());});
+// double-tap zoom is blocked by touch-action:manipulation (CSS); also block iOS pinch gestures
+{document.addEventListener('gesturestart',e=>e.preventDefault());document.addEventListener('dblclick',e=>e.preventDefault());}
+// ===== STREETS BACKGROUND (step 1): OSM raster tiles under the space map, 1 m = 1 game unit, north up =====
+// Free, no key. Usage policy: only visible tiles, zoom capped at 17, no prefetch, browser HTTP cache; failures are silent (offline OK).
+const OSM_TILE_URL=(z,x,y)=>'https://tile.openstreetmap.org/'+z+'/'+x+'/'+y+'.png';
+const OSM_DEFAULT={lat:51.4769,lon:-0.0005}; // Greenwich Park, London (neutral default when GPS has no fix)
+const OSM_KEY='spacegame_streets_v1',OSM_ZMAX=17,OSM_ZMIN=12,OSM_MAX_TILES=36;GAME_KEYS.push(OSM_KEY);
+let osmOn=false,osmAnchor={lat:OSM_DEFAULT.lat,lon:OSM_DEFAULT.lon,x:187,y:414,src:'default'};const osmTiles={},osmFailed=new Set();let osmKey='';
+const osmG=document.getElementById('osm'),streetsBtn=document.getElementById('streetsBtn'),osmAttr=document.getElementById('osmAttr');
+['pointerdown','pointerup'].forEach(ev=>{streetsBtn.addEventListener(ev,e=>e.stopPropagation());osmAttr.addEventListener(ev,e=>e.stopPropagation());});
+function osmWorld(lat,lon,z){const W=256*Math.pow(2,z),r=lat*Math.PI/180;return{x:(lon+180)/360*W,y:(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*W,W};}
+function osmRender(force){if(!osmOn)return;const ctm=svg.getScreenCTM();if(!ctm)return;const A=osmAnchor,cl=Math.cos(A.lat*Math.PI/180);
+ const z=Math.max(OSM_ZMIN,Math.min(OSM_ZMAX,Math.round(Math.log2(156543.034*cl*ctm.a))));const w=osmWorld(A.lat,A.lon,z),mpp=156543.034*cl/Math.pow(2,z); // metres (= game units) per tile pixel
+ const vb=svg.viewBox.baseVal,key=[z,A.lat.toFixed(6),A.lon.toFixed(6),A.x.toFixed(1),A.y.toFixed(1),vb.y.toFixed(0)].join('|');if(!force&&key===osmKey)return;osmKey=key;
+ const px=gx=>w.x+(gx-A.x)/mpp,py=gy=>w.y+(gy-A.y)/mpp,n=Math.pow(2,z);
+ const t0x=Math.floor(px(vb.x)/256),t1x=Math.floor(px(vb.x+vb.width)/256),t0y=Math.max(0,Math.floor(py(vb.y)/256)),t1y=Math.min(n-1,Math.floor(py(vb.y+vb.height)/256));
+ const want=new Set();let count=0;
+ for(let ty=t0y;ty<=t1y;ty++)for(let tx=t0x;tx<=t1x;tx++){if(++count>OSM_MAX_TILES)break;const k=z+'/'+(((tx%n)+n)%n)+'/'+ty;want.add(k+'@'+tx);
+  let im=osmTiles[k+'@'+tx];if(!im){if(osmFailed.has(k))continue;im=document.createElementNS(NS,'image');im.setAttribute('preserveAspectRatio','none');
+   im.addEventListener('error',()=>{osmFailed.add(k);im.remove();delete osmTiles[k+'@'+tx];});const [zz,xx,yy]=k.split('/');im.setAttribute('href',OSM_TILE_URL(zz,xx,yy));osmTiles[k+'@'+tx]=im;osmG.appendChild(im);}
+  const s=256*mpp;im.setAttribute('x',(A.x+(tx*256-w.x)*mpp).toFixed(2));im.setAttribute('y',(A.y+(ty*256-w.y)*mpp).toFixed(2));im.setAttribute('width',(s+0.6).toFixed(2));im.setAttribute('height',(s+0.6).toFixed(2));}
+ Object.keys(osmTiles).forEach(k=>{if(!want.has(k)){osmTiles[k].remove();delete osmTiles[k];}});}
+function setStreets(on,quiet){osmOn=on;osmG.style.display=on?'':'none';osmAttr.classList.toggle('show',on);streetsBtn.textContent='🗺 Streets: '+(on?'ON':'OFF');streetsBtn.classList.toggle('on',on);
+ try{localStorage.setItem(OSM_KEY,on?'1':'0');}catch(e){}if(on)osmRender(true);else{Object.keys(osmTiles).forEach(k=>{osmTiles[k].remove();delete osmTiles[k];});osmKey='';}
+ if(!quiet)showToast(on?'Streets on — '+(osmAnchor.src==='gps'?'anchored to your GPS fix':'default spot (turn GPS on to anchor here)'):'Streets off');}
+streetsBtn.onclick=e=>{e.stopPropagation();setStreets(!osmOn);};
+// anchor: every accepted GPS fix pins its lat/lon to the ship's current game position (ship moves 1 m = 1 unit, north up)
+{let lastA=null;setInterval(()=>{if(typeof gpsOn!=='undefined'&&gpsOn&&gpsAnchor&&gpsAnchor!==lastA){lastA=gpsAnchor;osmAnchor={lat:gpsAnchor.lat,lon:gpsAnchor.lon,x:ship.x,y:ship.y,src:'gps'};osmRender();}},500);}
+{const _o=gpsOnPos;gpsOnPos=function(){const before=gpsAnchor;const r=_o.apply(this,arguments);if(gpsAnchor&&gpsAnchor!==before){osmAnchor={lat:gpsAnchor.lat,lon:gpsAnchor.lon,x:ship.x,y:ship.y,src:'gps'};osmRender();}return r;};
+}
+setInterval(()=>osmRender(),400); // cheap: re-lays tiles only when zoom/anchor/pan changed
+window.addEventListener('resize',()=>osmRender(true));
+try{if(localStorage.getItem(OSM_KEY)==='1')setStreets(true,true);}catch(e){}
+// ===== OSM STEP 2: real streets become lanes, real places become POIs (only while Streets is ON) =====
+// Free public Overpass API, one request at a time, 25 s timeout, >=15 s between requests, cached in localStorage per ~450 m cell.
+const OVERPASS=['https://overpass-api.de/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+const OSM_CELL=0.004,OSM_POI_CAP=24,OSM_RAIDER_CAP=2,OSM_CACHE_PREFIX='spacegame_osmdata_',OSM_CACHE_KEEP=3;
+YIELDS['Fuel Buoy']=[['hydrogen',1,2,1],['volatiles',1,1,.15]];
+const BUILTIN={lanes:LANES.map(L=>L.slice()),pois:POIS.filter(p=>['planet','asteroid','station','nebula','raider'].includes(p.id))};
+let osmRetry=0,osmData=null,osmCell='',osmBusy=false,osmLastReq=0,osmActive=false,osmPois=[],osmHidden=[];
+const osmHash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
+// OSM tags -> game POI type (deterministic: same place always gives the same type)
+function osmClass(t){if(!t)return null;
+ if(t.shop||t.amenity==='marketplace')return{type:'Station',pri:3,color:'#ccd',r:9,label:'Shop'};
+ if(t.leisure==='park'||t.leisure==='garden'||t.landuse==='grass'||t.natural==='wood')return{type:'Asteroid Field',pri:4,color:'#a87',r:11,label:'Park'};
+ if(['cafe','restaurant','fast_food','pub','bar'].includes(t.amenity))return{type:'Nebula',pri:2,color:'#c6f',r:10,label:'Café'};
+ if(t.highway==='bus_stop'||t.public_transport==='platform')return{type:'Fuel Buoy',pri:1,color:'#6cf',r:7,label:'Bus stop'};
+ if(t.tourism||t.historic||t.amenity==='place_of_worship')return{type:'Planet',pri:5,color:'#5c9',r:12,label:'Landmark',landmark:true};
+ return null;}
+// query only the charted map area (374x828 m) around the map centre, + margin for cell rounding: ~1.3 x 0.7 km
+function osmQuery(c){const dLat=(414+260)/111320,dLon=(187+170)/(111320*Math.cos(c.lat*Math.PI/180));const b=[c.lat-dLat,c.lon-dLon,c.lat+dLat,c.lon+dLon].map(v=>v.toFixed(5)).join(',');
+ return '[out:json][timeout:25];('+
+  'way["highway"~"^(trunk|primary|secondary|tertiary|residential|unclassified|living_street|pedestrian)$"]('+b+');'+
+  'node["shop"]('+b+');node["amenity"~"^(cafe|restaurant|fast_food|pub|bar|marketplace|place_of_worship)$"]('+b+');node["highway"="bus_stop"]('+b+');'+
+  'node["tourism"~"^(attraction|museum|viewpoint|artwork|gallery)$"]('+b+');node["historic"]('+b+');way["leisure"~"^(park|garden)$"]('+b+');'+
+  ');out geom qt 3000;';}
+// compact form kept in cache: ways [[lat,lon],...] (5 dp), places {id,lat,lon,name,cls}
+function osmCompact(j){const ways=[],places=[];(j.elements||[]).forEach(e=>{const t=e.tags||{};
+ if(e.type==='way'&&t.highway&&e.geometry&&ways.length<700)ways.push(e.geometry.map(g=>[+g.lat.toFixed(5),+g.lon.toFixed(5)]));
+ else{const c=osmClass(t);if(!c)return;let lat=e.lat,lon=e.lon;if(e.type==='way'&&e.geometry&&e.geometry.length){lat=e.geometry.reduce((a,g)=>a+g.lat,0)/e.geometry.length;lon=e.geometry.reduce((a,g)=>a+g.lon,0)/e.geometry.length;}
+  if(lat==null)return;places.push({id:e.type[0]+e.id,lat:+lat.toFixed(5),lon:+lon.toFixed(5),name:(t.name||'').slice(0,22),tags:{shop:t.shop,amenity:t.amenity,leisure:t.leisure,highway:t.highway,tourism:t.tourism,historic:t.historic,public_transport:t.public_transport}});}});
+ return{ways,places,at:Date.now()};}
+function osmCacheGet(k){try{return JSON.parse(localStorage.getItem(OSM_CACHE_PREFIX+k)||'null');}catch(e){return null;}}
+function osmCachePut(k,d){try{const keys=Object.keys(localStorage).filter(x=>x.startsWith(OSM_CACHE_PREFIX)&&x!==OSM_CACHE_PREFIX+k).sort((a,b)=>(osmCacheGet(a.slice(OSM_CACHE_PREFIX.length))||{}).at-(osmCacheGet(b.slice(OSM_CACHE_PREFIX.length))||{}).at);
+ while(keys.length>=OSM_CACHE_KEEP)localStorage.removeItem(keys.shift());localStorage.setItem(OSM_CACHE_PREFIX+k,JSON.stringify(d));}catch(e){}}
+{const _rs=resetAll;resetAll=function(){try{Object.keys(localStorage).filter(k=>k.startsWith(OSM_CACHE_PREFIX)).forEach(k=>localStorage.removeItem(k));}catch(e){}return _rs.apply(this,arguments);};}
+async function osmFetch(cellKey,c){if(osmBusy)return;const wait=15000-(Date.now()-osmLastReq);if(wait>0){setTimeout(()=>osmSync(),wait+50);return;}
+ osmBusy=true;osmLastReq=Date.now();showToast('Loading streets…');const q='data='+encodeURIComponent(osmQuery(c));let got=null;
+ for(const url of OVERPASS){try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),url===OVERPASS[0]?12000:30000);const r=await fetch(url,{method:'POST',body:q,headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ac.signal});clearTimeout(to);
+   if(r.ok){got=osmCompact(await r.json());break;}}catch(e){}}
+ osmBusy=false;if(!osmOn)return;
+ if(!got||got.ways.length<2){if(!osmActive)showToast('Streets offline, using charted lanes');osmRetry=Math.min(300000,(osmRetry||30000)*2);setTimeout(()=>{if(osmOn&&osmCell===cellKey){osmCell='';osmSync();}},osmRetry);return;} osmRetry=0; // busy servers: retry 60 s, 120 s ... max 5 min
+ osmCachePut(cellKey,got);if(osmCell===cellKey){osmData=got;osmApply();showToast('Streets loaded: '+got.ways.length+' streets, '+osmPois.length+' places');}}
+function osmSync(){if(!osmOn)return;const A=osmAnchor,C={lat:A.lat+(A.y-414)/111320,lon:A.lon+(187-A.x)/(111320*Math.cos(A.lat*Math.PI/180))},cell=[Math.round(C.lat/OSM_CELL),Math.round(C.lon/OSM_CELL)],k=cell.join('_');
+ if(k!==osmCell){osmCell=k;const cached=osmCacheGet(k);if(cached&&cached.ways&&cached.ways.length>=2){osmData=cached;osmApply();return;}osmFetch(k,{lat:cell[0]*OSM_CELL,lon:cell[1]*OSM_CELL});return;}
+ if(osmData)osmApply();}
+// projection identical to the tile layer (Web Mercator at anchor scale): 1 m = 1 unit, north up
+function osmProj(){const A=osmAnchor,z=17,w=osmWorld(A.lat,A.lon,z),mpp=156543.034*Math.cos(A.lat*Math.PI/180)/Math.pow(2,z);return(lat,lon)=>{const p=osmWorld(lat,lon,z);return{x:A.x+(p.x-w.x)*mpp,y:A.y+(p.y-w.y)*mpp};};}
+function setLanes(list,osm){nodes.length=0;edges.length=0;lanesG.innerHTML='';lanesG.ownerSVGElement.classList.toggle('osm-lanes',!!osm);
+ list.forEach(L=>{const pts=L.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');(osm?['lane','lane-core']:['lane','lane-core','lane-hit']).forEach(cls=>{const pl=document.createElementNS(NS,'polyline');pl.setAttribute('points',pts);pl.setAttribute('class',cls);lanesG.appendChild(pl);});
+  for(let i=0;i<L.length-1;i++)edges.push([nodeId(...L[i]),nodeId(...L[i+1])]);});}
+const inView=(p,m)=>p.x>-m&&p.x<374+m&&p.y>-m&&p.y<828+m;
+function osmApply(){if(!osmOn||!osmData)return;const P=osmProj();
+ // lanes: projected streets clipped to the charted area (+60 m)
+ const lanes=[];osmData.ways.forEach(w=>{let cur=[];w.forEach(([la,lo])=>{const q=P(la,lo);if(inView(q,60))cur.push([+q.x.toFixed(1),+q.y.toFixed(1)]);else{if(cur.length>1)lanes.push(cur);cur=[];}});if(cur.length>1)lanes.push(cur);});
+ if(lanes.length<2){osmRestore();return;}
+ setLanes(lanes,true);
+ // places: priority, then spread (>=28 m apart), capped; raiders only at landmarks, chosen by hash, max 2
+ const raw=osmData.places.map(pl=>({pl,c:osmClass(pl.tags),q:P(pl.lat,pl.lon)})).filter(o=>o.c&&o.q.x>12&&o.q.x<362&&o.q.y>100&&o.q.y<790) /* keep clear of the top buttons and bottom hint */.sort((a,b)=>osmHash(a.pl.id)-osmHash(b.pl.id));
+ const byCat={};raw.forEach(o=>(byCat[o.c.label]=byCat[o.c.label]||[]).push(o));const cats=Object.keys(byCat).sort((a,b)=>byCat[b][0].c.pri-byCat[a][0].c.pri);const cand=[];
+ for(let i=0;cand.length<raw.length;i++)cats.forEach(k=>{if(byCat[k][i])cand.push(byCat[k][i]);}); // round-robin across categories for variety
+ const keep=[],fixed=POIS.filter(p=>!osmPois.includes(p)&&!BUILTIN.pois.includes(p)&&p.x>-500);
+ const busy=q=>keep.concat(fixed).some(o=>Math.hypot((o.q||o).x-q.x,(o.q||o).y-q.y)<36)||Math.hypot(q.x-BUILTIN.pois.find(b=>b.id==='station').x,q.y-BUILTIN.pois.find(b=>b.id==='station').y)<36;
+ cand.forEach(o=>{if(keep.length<OSM_POI_CAP&&!busy(o.q))keep.push(o);});
+ let raiders=0;const names=new Set(POIS.filter(p=>!osmPois.includes(p)).map(p=>p.name));const next=[];
+ keep.forEach(o=>{let id='osm-'+o.pl.id,p=osmPois.find(x=>x.id===id);
+  if(!p){const c=o.c;let type=c.type,disp='passive',color=c.color,r=c.r,base=o.pl.name||c.label;
+   const od=BUILTIN.pois.find(b=>b.id==='station');if(c.landmark&&raiders<OSM_RAIDER_CAP&&osmHash(o.pl.id)%4===0&&Math.hypot(o.q.x-od.x,o.q.y-od.y)>140){type='Ship';disp='hostile';color='#f33';r=10;base='Raider Vex · '+(o.pl.name||'Landmark');}
+   let name=base,i=2;while(names.has(name))name=base+' '+(i++);names.add(name);
+   p={id,name,type,disposition:disp,friendly:type==='Station',x:o.q.x,y:o.q.y,color,r,osm:true};makePoiEl(p);addSdots(p);}
+  if(p.disposition==='hostile')raiders++;p.x=o.q.x;p.y=o.q.y;p.el.setAttribute('transform','translate('+p.x.toFixed(1)+','+p.y.toFixed(1)+')');next.push(p);});
+ osmPois.filter(p=>!next.includes(p)).forEach(p=>{osmStash(p);if(selPoi===p)closeCard();if(collecting===p)stopCollect();p.el.remove();const k=POIS.indexOf(p);if(k>=0)POIS.splice(k,1);});
+ next.forEach(p=>{if(!POIS.includes(p)){POIS.push(p);poisG.appendChild(p.el);osmUnstash(p);}});osmPois=next;
+ // built-ins: Outpost Delta always stays (safe yard: market, modules, emergency repair); the other four hide when real places exist
+ const hideB=next.length>=4;BUILTIN.pois.forEach(p=>{const hide=hideB&&p.id!=='station';const i=POIS.indexOf(p);
+  if(hide&&i>=0){if(selPoi===p)closeCard();if(collecting===p)stopCollect();POIS.splice(i,1);p.el.remove();}else if(!hide&&i<0){POIS.push(p);poisG.appendChild(p.el);}});
+ osmActive=true;if(typeof restoreLocks==='function'){restoreLocks();declutterLabels();}if(typeof gpsLaneCheck==='function'&&gpsOn)gpsLaneCheck();}
+function osmRestore(){if(!osmActive&&!osmPois.length)return;setLanes(BUILTIN.lanes,false);
+ osmPois.forEach(p=>{osmStash(p);if(selPoi===p)closeCard();if(collecting===p)stopCollect();p.el.remove();const k=POIS.indexOf(p);if(k>=0)POIS.splice(k,1);});osmPois=[];
+ BUILTIN.pois.forEach(p=>{if(!POIS.includes(p)){POIS.push(p);poisG.appendChild(p.el);}});osmActive=false;osmCell='';declutterLabels();saveSoon();}
+{const _s=setStreets;setStreets=function(on,quiet){_s.apply(this,arguments);if(on)osmSync();else{osmRestore();osmData=null;}};}
+// re-project on anchor change (GPS fixes), refetch only when the ~450 m cell changes
+{let lastKey='';setInterval(()=>{if(!osmOn)return;const k=[osmAnchor.lat,osmAnchor.lon,osmAnchor.x,osmAnchor.y].join('|');if(k!==lastKey){lastKey=k;osmSync();}},1000);}
+// OSM raiders behave like Raider Vex (module drops)
+{const i=MOD_DROP_FROM.indexOf('Raider Vex');MOD_DROP_FROM.includes=function(n){return Array.prototype.includes.call(this,n)||/^Raider Vex · /.test(n||'');};}
+// ===== v44: move an OSM raider's state in/out of the hold when it appears/disappears =====
+function osmStash(p){if(!p.osm||p.disposition!=='hostile')return;const k='osm:'+p.id;if(targetDmg[p.name]){osmHeldDmg[k]=targetDmg[p.name];delete targetDmg[p.name];}
+ salvage.filter(o=>o.poi===p.name).forEach(o=>{o.poi=k;osmHeldSalv.push(o);});salvage=salvage.filter(o=>o.poi!==k);}
+function osmUnstash(p){if(!p.osm||p.disposition!=='hostile')return;const k='osm:'+p.id;if(osmHeldDmg[k]){targetDmg[p.name]=osmHeldDmg[k];delete osmHeldDmg[k];}
+ const back=osmHeldSalv.filter(o=>o.poi===k);if(back.length){osmHeldSalv=osmHeldSalv.filter(o=>o.poi!==k);back.forEach(o=>{o.poi=p.name;salvage.push(o);});}}
+// ===== v44: weapon locks survive reload while their target still exists =====
+const LOCK_KEY='spacegame_locks_v1';GAME_KEYS.push(LOCK_KEY);const lockKeyOf=p=>p?(p.osm?'osm:'+p.id:p.name):null;
+let lockTargets={};try{const d=JSON.parse(localStorage.getItem(LOCK_KEY)||'{}');if(d&&typeof d==='object')lockTargets=d;}catch(e){}
+function saveLocks(){if(window.__resetting)return;try{localStorage.setItem(LOCK_KEY,JSON.stringify(lockTargets));}catch(e){}}
+{const _a=addLock;addLock=function(n){_a.apply(this,arguments);if(locks[n]&&combatPoi){lockTargets[n]={t:lockKeyOf(combatPoi),section:locks[n].section};saveLocks();}};}
+{const _r=removeLock;removeLock=function(n){_r.apply(this,arguments);if(lockTargets[n]){delete lockTargets[n];saveLocks();}};}
+function restoreLocks(){Object.entries(lockTargets).forEach(([n,l])=>{if(locks[n]||!l||!iconOf(n))return;const p=POIS.find(q=>lockKeyOf(q)===l.t&&isHostile(q));if(!p)return;const st=targetDmg[p.name];if(st&&st.destroyed)return;
+ locks[n]={section:SECTIONS.large[l.section]?l.section:Object.keys(SECTIONS.large)[0],color:WPN_COLORS[n]||'#fff',at:Date.now()};iconOf(n).classList.add('locked');});renderPips();}
+// ===== v44: crowded OSM labels: selected, then nearest-to-ship get full labels; others shortened or hidden =====
+function declutterLabels(){const list=POIS.filter(p=>p.el&&p.x>-500);const txt=p=>p.el.querySelector('text');
+ if(!osmActive){list.forEach(p=>{const t=txt(p);if(t&&t.dataset.full){t.textContent=t.dataset.full;delete t.dataset.full;}if(t)t.style.display='';});return;}
+ const order=list.slice().sort((a,b)=>(b===selPoi)-(a===selPoi)||Math.hypot(a.x-ship.x,a.y-ship.y)-Math.hypot(b.x-ship.x,b.y-ship.y));const boxes=[];
+ const box=(p,s)=>{const w=s.length*5.4+4,y=p.y+p.r+18,a=p.x<50?'s':p.x>324?'e':'m',x0=a==='s'?p.x-p.r:a==='e'?p.x+p.r-w:p.x-w/2;return{p,x0,x1:x0+w,y0:y-10,y1:y+2};};
+ const hit=b=>boxes.some(c=>b.x0<c.x1&&b.x1>c.x0&&b.y0<c.y1&&b.y1>c.y0)||list.some(q=>q!==b.p&&q.x+q.r>b.x0&&q.x-q.r<b.x1&&q.y+q.r>b.y0&&q.y-q.r<b.y1); // also keep labels off other POI icons
+ order.forEach((p,i)=>{const t=txt(p);if(!t)return;const full=t.dataset.full||t.textContent;t.dataset.full=full;
+  const short=full.length>11?full.slice(0,10).trim()+'…':null;let s=full,b=box(p,full);
+  if(i>0&&p!==selPoi&&hit(b)){s=null;if(short){const b2=box(p,short);if(!hit(b2)){s=short;b=b2;}}}
+  if(s){t.textContent=s;t.style.display='';boxes.push(b);}else t.style.display='none';});}
+setInterval(declutterLabels,700);
+{const _sp=selectPoi;selectPoi=function(){const r=_sp.apply(this,arguments);declutterLabels();return r;};}
+if(osmOn)osmSync();
+restoreLocks();
+// ===== v45: THEFT CONSEQUENCES — 'Suspect' status =====
+// Taking a crate still flagged to another pilot (confirm prompt) marks you Suspect for 10 min (timestamp saved; repeat thefts extend it).
+// While Suspect: Outpost Delta (security HQ) refuses trade; other NPC station markets buy at +50% / pay −50%; My Station is unaffected.
+// A Bounty Hunter may appear near you on the map and engages when it reaches you. Destroying it pays 60 cr; next hunter is at least 3 min later.
+const SUSPECT_KEY='spacegame_suspect_v1',SUSPECT_MS=10*60e3;GAME_KEYS.push(SUSPECT_KEY);
+let suspectUntil=0;try{suspectUntil=+localStorage.getItem(SUSPECT_KEY)||0;}catch(e){}
+const isSuspect=()=>suspectUntil>Date.now();
+function setSuspect(){suspectUntil=Math.max(suspectUntil,Date.now())+(isSuspect()?SUSPECT_MS/2:SUSPECT_MS);suspectUntil=Math.min(suspectUntil,Date.now()+2*SUSPECT_MS);try{localStorage.setItem(SUSPECT_KEY,String(suspectUntil));}catch(e){}renderSuspect();}
+const susBadge=document.createElement('div');susBadge.id='suspectBadge';document.querySelector('.phone').appendChild(susBadge);
+susBadge.onclick=e=>{e.stopPropagation();showToast('Suspect: Outpost Delta refuses trade, other markets +50%, bounty hunters may engage');};
+function renderSuspect(){const on=isSuspect();susBadge.style.display=on?'block':'none';if(on)susBadge.innerHTML='<span>⚠ SUSPECT '+fmt(suspectUntil-Date.now())+'</span>';
+ if(!on&&hunter)removeHunter('Bounty Hunter broke off — status cleared');}
+{const b=document.getElementById('cdOk'),_ok=b.onclick;b.onclick=function(){const o=cdPending;const r=_ok.apply(this,arguments);if(o&&!salvage.includes(o)){setSuspect();setTimeout(()=>showToast('⚠ SUSPECT for '+fmt(suspectUntil-Date.now())+' — markets wary, hunters out'),2600);}return r;};}
+const isOutpost=()=>/Outpost Delta/.test(dockedAt());const isNpcMarket=()=>!myStation||dockedAt()!==myStation.name;
+{const mb=document.getElementById('marketBtn'),_o=mb.onclick;mb.onclick=function(){if(isSuspect()&&isOutpost()){showToast('Outpost Delta refuses trade — you are Suspect ('+fmt(suspectUntil-Date.now())+')');return;}return _o.apply(this,arguments);};}
+function withSuspectPrices(fn){return function(){if(!(isSuspect()&&isNpcMarket()))return fn.apply(this,arguments);const old=TRADES.map(t=>t.cr);
+ TRADES.forEach(t=>t.cr=t.cr<0?Math.round(t.cr*1.5):Math.max(1,Math.floor(t.cr*.5)));try{return fn.apply(this,arguments);}finally{TRADES.forEach((t,i)=>t.cr=old[i]);}};}
+renderMarket=withSuspectPrices(renderMarket);doTrade=withSuspectPrices(doTrade);
+{const _r=renderMarket;renderMarket=function(){_r.apply(this,arguments);if(isSuspect()&&isNpcMarket())document.getElementById('mktList').insertAdjacentHTML('afterbegin','<div class="sus-note">⚠ Suspect: prices +50% buy / −50% sell</div>');};}
+// Bounty hunter NPC
+let hunter=null,hunterNext=0;
+function spawnHunter(){const a=Math.random()*Math.PI*2;const x=Math.max(20,Math.min(354,ship.x+Math.cos(a)*140)),y=Math.max(110,Math.min(780,ship.y+Math.sin(a)*140));
+ hunter={id:'hunter',name:'Bounty Hunter',type:'Ship',disposition:'hostile',friendly:false,x,y,color:'#fb3',r:10};makePoiEl(hunter);addSdots(hunter);POIS.push(hunter);delete targetDmg[hunter.name];showToast('🚨 A Bounty Hunter is tracking you');}
+function removeHunter(msg){if(!hunter)return;const h=hunter;hunter=null;if(selPoi===h)closeCard();h.el.remove();const i=POIS.indexOf(h);if(i>=0)POIS.splice(i,1);delete targetDmg[h.name];if(msg)showToast(msg);}
+const onMapIdle=()=>!mapScreen.classList.contains('hidden')&&!document.querySelector('#dockPanel.show,#marketPanel.show,#myStationPanel.show,#shipOv.show')&&!(typeof siege!=='undefined'&&siege&&combatPoi===SR);
+setInterval(()=>{renderSuspect();if(!isSuspect())return;const now=Date.now();
+ if(!hunter){if(now>hunterNext&&onMapIdle()){hunterNext=now+60e3;if(Math.random()<.5)spawnHunter();}return;}
+ if(!onMapIdle()||combatPoi===hunter)return;const dx=ship.x-hunter.x,dy=ship.y-hunter.y,d=Math.hypot(dx,dy);
+ if(d<22){selPoi=hunter;orbitPoi=null;stopAllFiring();enterShipView('combat','BOUNTY HUNTER (SHIP)');renderPips();renderSalvage();showToast('🚨 Bounty Hunter engages!');return;}
+ const s=Math.min(d,14);hunter.x+=dx/d*s;hunter.y+=dy/d*s;hunter.el.setAttribute('transform','translate('+hunter.x.toFixed(1)+','+hunter.y.toFixed(1)+')');},1000);
+{const _dt=destroyTarget;destroyTarget=function(st){const h=combatPoi&&combatPoi===hunter;const r=_dt.apply(this,arguments);if(h){credits+=60;saveNow();hunterNext=Date.now()+180e3;setTimeout(()=>removeHunter('Bounty Hunter destroyed (+60 cr)'),1500);}return r;};}
+renderSuspect();
+
+// ===== v45: PLAYER STATION Lv 3–5 =====
+// Costs scale: Lv3 = 8 kits + 300 cr, Lv4 = 12 kits + 600 cr, Lv5 = 16 kits + 1000 cr. Perks stack:
+//  Lv1 Repair, Lv2 Shipyard (existing) · Lv3 Repair Bay: −50% repair costs here (bays + modules)
+//  Lv4 Defense Turret: siege hull drain −40% · Lv5 Cargo Depot: carry 5 Build Kits (was 3)
+const ST_UP={2:{kits:8,cr:300},3:{kits:12,cr:600},4:{kits:16,cr:1000}},ST_MAX=5;
+const ST_PERKS=[[1,'🔧 Repair'],[2,'🛠 Shipyard'],[3,'🔧 Repair Bay: −50% repair costs here'],[4,'🗼 Defense Turret: siege hull drain −40%'],[5,'📦 Cargo Depot: carry 5 Build Kits']];
+{const _k=kitsNeeded;kitsNeeded=function(lv){return ST_UP[lv]?ST_UP[lv].kits:lv>=ST_MAX?Infinity:_k(lv);};}
+const stLv=()=>myStation?myStation.level:0;
+KIT_MAX_FN=()=>stLv()>=5?5:3;
+document.getElementById('msKits').insertAdjacentHTML('afterend','<div id="msPerks" class="ms-perks"></div>');
+{const _r=renderMS;renderMS=function(){_r.apply(this,arguments);if(!myStation)return;const lv=myStation.level,up=document.getElementById('msUpgrade'),c=ST_UP[lv];
+ if(lv>=ST_MAX)document.getElementById('msKits').textContent='Max level (Lv '+ST_MAX+')';
+ if(c){const k=myStation.kits||0;document.getElementById('msKits').textContent='Build Kits needed for Lv '+(lv+1)+': '+k+'/'+c.kits+' · '+c.cr+' cr';
+  up.style.display=k>=c.kits?'block':'none';up.textContent='⬆ Upgrade to Lv '+(lv+1)+' ('+c.cr+' cr)';setDis(up,credits<c.cr?'Need '+c.cr+' cr (have '+credits+')':null);}
+ document.getElementById('msPerks').innerHTML=ST_PERKS.map(([l,t])=>'<div class="'+(lv>=l?'on':'')+'">'+(lv>=l?'✓ ':'🔒 Lv '+l+' · ')+t+'</div>').join('');};}
+{const b=document.getElementById('msUpgrade'),_u=b.onclick;b.onclick=function(){const lv=myStation&&myStation.level,c=ST_UP[lv];if(!c)return _u.apply(this,arguments);
+ if(myStation.kits<c.kits||credits<c.cr)return;credits-=c.cr;myStation.level=lv+1;myStation.kits=0;saveNow();renderMS();showToast('My Station upgraded to Lv '+(lv+1)+' — '+ST_PERKS[lv][1]+'!');};}
+// Lv3 repair discount at My Station
+{const b=document.getElementById('msRepair'),_r=b.onclick;b.onclick=function(){if(stLv()<3)return _r.apply(this,arguments);const o={...REPAIR};REPAIR.ferrite=Math.ceil(o.ferrite/2);REPAIR.hydrogen=Math.ceil(o.hydrogen/2);try{return _r.apply(this,arguments);}finally{Object.assign(REPAIR,o);}};}
+{const _c=modRepairCost;modRepairCost=function(m){const c=_c.apply(this,arguments);if(stLv()>=3&&atMyStation()){c.ferrite=Math.ceil(c.ferrite/2);c.hydrogen=Math.ceil(c.hydrogen/2);}return c;};}
+// Lv4 turret: siege hull drain −40%
+function turretMul(){return myStation&&myStation.level>=4?.6:1;} // v46: applied to raw loss before the 0% clamp (old wrapper scaled the clamped value, so hull never hit 0)
+// ===== DEV CHEATS (REMOVE BEFORE PLAYTEST) =====
+//  - "DEV: Kits + cr for next Lv" (My Station dock) -> delivers all kits needed for the next level and adds that level's credits
+//  - "DEV: Become Suspect" (My Station dock) -> sets Suspect status (10 min) and allows a Bounty Hunter immediately
+{const box=document.getElementById('devSiegeBtn');box.insertAdjacentHTML('beforebegin','<button class="dock-svc dev" id="devStLv">DEV: Kits + cr for next Lv</button><button class="dock-svc dev" id="devSuspect">DEV: Become Suspect</button>');
+ document.getElementById('devStLv').onclick=()=>{if(!myStation)return;const lv=myStation.level,c=ST_UP[lv];if(lv>=ST_MAX){showToast('Station at max level');return;}if(c){myStation.kits=c.kits;credits+=c.cr;}else myStation.kits=kitsNeeded(lv);saveNow();renderMS();showToast('DEV: kits'+(c?' + '+c.cr+' cr':'')+' ready for Lv '+(lv+1));};
+ document.getElementById('devSuspect').onclick=()=>{setSuspect();hunterNext=0;showToast('DEV: you are Suspect');};}
+
+// v46: module resale also gets Suspect pricing (−50%) at NPC markets
+function suspectSell(pr){return isSuspect()&&isNpcMarket()?Math.max(1,Math.floor(pr*.5)):pr;}
+// v46: active Bounty Hunter persists (position + damage) while Suspect
+const HUNTER_KEY='spacegame_hunter_v1';GAME_KEYS.push(HUNTER_KEY);
+function saveHunter(){if(window.__resetting)return;try{if(hunter)localStorage.setItem(HUNTER_KEY,JSON.stringify({x:hunter.x,y:hunter.y,dmg:targetDmg[hunter.name]||null,next:hunterNext}));else localStorage.setItem(HUNTER_KEY,JSON.stringify({next:hunterNext}));}catch(e){}}
+{const _s=spawnHunter;spawnHunter=function(){_s.apply(this,arguments);saveHunter();};const _r=removeHunter;removeHunter=function(){_r.apply(this,arguments);saveHunter();};}
+setInterval(()=>{if(hunter)saveHunter();},2000);addEventListener('pagehide',saveHunter);
+{let d=null;try{d=JSON.parse(localStorage.getItem(HUNTER_KEY)||'null');}catch(e){}
+ if(d){hunterNext=Number(d.next)||0;if(isSuspect()&&Number.isFinite(d.x)&&Number.isFinite(d.y)){spawnHunter();hunter.x=Math.max(10,Math.min(364,d.x));hunter.y=Math.max(10,Math.min(818,d.y));hunter.el.setAttribute('transform','translate('+hunter.x.toFixed(1)+','+hunter.y.toFixed(1)+')');
+  if(d.dmg&&Array.isArray(d.dmg.bays)&&!d.dmg.destroyed)targetDmg[hunter.name]={bays:d.dmg.bays.map(x=>Math.max(0,Math.min(100,+x||0))),destroyed:false};saveHunter();}}}
 </script>
 </body>
 </html>
